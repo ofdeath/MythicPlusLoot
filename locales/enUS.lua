@@ -28,6 +28,7 @@ L["One-Hand"] = "One-Hand"
 L["Off-Hand"] = "Off-Hand"
 L["Two-Hand"] = "Two-Hand"
 L["Ranged"] = "Ranged"
+L["Favorites"] = "Favorites"
 
 -- Source list
 L["Dungeon Drop"] = "Dungeon Drop"
@@ -48,3 +49,7 @@ L["Item Slot"] = "Item Slot"
 L["Mythic Level"] = "Mythic Level"
 L["Source"] = "Source"
 L["Armor Type"] = "Armor Type"
+
+-- Other
+L["Added to favorites:"] = "Added to favorites:"
+L["Removed from favorites:"] = "Removed from favorites:"

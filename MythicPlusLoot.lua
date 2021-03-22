@@ -113,6 +113,8 @@ local icons = {
 	HEALER     = "|TInterface\\LFGFrame\\UI-LFG-ICON-PORTRAITROLES:14:14:0:0:64:64:20:39:1:20|t",
 	DAMAGER    = "|TInterface\\LFGFrame\\UI-LFG-ICON-PORTRAITROLES:14:14:0:0:64:64:20:39:22:41|t",
 }
+local icon_favorite = icons.friend;
+local icon_unfavorite = icons.bnetfriend;
 
 local iLevelListDrop = {
 	[1] = 184,
@@ -517,11 +519,9 @@ function clearFrames()
 end
 
 function undoFavItem(f, itemFrame, itemID, itemLevel)
-	f:SetScript("OnMouseDown", nil);
-	f.ico:SetText(icons.bnetfriend);
-	itemFrame.ico.prefix = icons.bnetfriend;
+	f.ico:SetText(icon_unfavorite);
+	itemFrame.ico.prefix = icon_unfavorite;
 	itemFrame.ico:SetText(itemFrame.ico.prefix .. itemFrame.ico.suffix);
-	itemFrame:SetScript("OnMouseDown", nil);
 
 	if true then
 		local index = nil;
@@ -535,14 +535,13 @@ function undoFavItem(f, itemFrame, itemID, itemLevel)
 			tremove(db.char.favoriteItems, index);
 		end
 	end
+	itemFrame.favorite = false;
 end
 
 function redoFavItem(f, itemFrame, itemID, itemLevel)
-	f:SetScript("OnMouseDown", nil);
-	f.ico:SetText(icons.friend);
-	itemFrame.ico.prefix = icons.friend .. " ";
+	f.ico:SetText(icon_favorite);
+	itemFrame.ico.prefix = icon_favorite;
 	itemFrame.ico:SetText(itemFrame.ico.prefix .. itemFrame.ico.suffix);
-	itemFrame:SetScript("OnMouseDown", nil);
 
 	if true then
 		for k,v in pairs(db.char.favoriteItems) do
@@ -553,9 +552,10 @@ function redoFavItem(f, itemFrame, itemID, itemLevel)
 		end
 		tinsert(db.char.favoriteItems, itemID);
 	end
+	itemFrame.favorite = true;
 end
 
-function createFavItem(frame, itemFrame, itemID, itemLevel, add)
+function createFavItem(frame, itemFrame, itemID, itemLevel)
 	local xStart = sizex + 10;
 	local xItemStart, yItemStart, yItemOffset, xItemSecondColumn = xStart, -120, -220, 325;
 
@@ -563,6 +563,11 @@ function createFavItem(frame, itemFrame, itemID, itemLevel, add)
 	for k,v in pairs(tmpFavItems) do
 		if v == itemID then
 			-- already added
+			if itemFrame.favorite then
+				undoFavItem(itemFrame.fav, itemFrame, itemID, itemLevel);
+			else
+				redoFavItem(itemFrame.fav, itemFrame, itemID, itemLevel);
+			end
 			return
 		end
 		favoriteCount = favoriteCount + 1;
@@ -580,11 +585,7 @@ function createFavItem(frame, itemFrame, itemID, itemLevel, add)
 		--favoriteString:SetJustifyV("CENTER");
 		favoriteString:SetPoint("TOPLEFT", frame, "TOPLEFT", offsetX, offsetY);
 		favoriteString:SetTextColor(1, 1, 1, 1);
-		if add then
-			favoriteString:SetText(L["Added to favorites:"]);
-		else
-			favoriteString:SetText(L["Removed from favorites:"]);
-		end
+		favoriteString:SetText(L["Favorites"] .. ":");
 		tinsert(favframepool, favoriteString);
 	end
 
@@ -605,12 +606,15 @@ function createFavItem(frame, itemFrame, itemID, itemLevel, add)
 			f.tex:SetTexture(itemIcon);
 			f.ico = f:CreateFontString(f, "OVERLAY", "GameTooltipText")
 			f.ico:SetPoint("BOTTOMLEFT", f, "TOPLEFT", 0, 0)
-			if add then
-				itemFrame.ico.prefix = icons.friend .. " ";
+			if itemFrame.favorite then
+				f.ico:SetText(icon_unfavorite);
+				itemFrame.ico.prefix = icon_unfavorite;
 			else
-				itemFrame.ico.prefix = icons.bnetfriend .. " ";
+				f.ico:SetText(icon_favorite);
+				itemFrame.ico.prefix = icon_favorite;
 			end
 			itemFrame.ico:SetText(itemFrame.ico.prefix .. itemFrame.ico.suffix);
+			itemFrame.fav = f;
 			f:SetScript("OnEnter",
 			function()
 				GameTooltip:SetOwner(f, "ANCHOR_BOTTOMRIGHT",f:GetWidth(),f:GetHeight());
@@ -623,40 +627,28 @@ function createFavItem(frame, itemFrame, itemID, itemLevel, add)
 				GameTooltip:Hide();
 			end
 			);
-			if add then
-				f:SetScript("OnMouseDown",
-				function(self, button)
-					local shift_key = IsShiftKeyDown()
-					if button == "LeftButton" then
-						if shift_key then
-							itemName, itemLink, itemQuality, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, sellPrice, classID, subclassID, bindType, expacID, setID, isCraftingReagent = GetItemInfo("item:"..k.."..::::::::::::2:6807:"..itemLevel)
-							SendChatMessage(itemLink)
-						end
-					elseif button == "RightButton" then
-						undoFavItem(self, itemFrame, k, itemLevel);
+			f:SetScript("OnMouseDown",
+			function(self, button)
+				local shift_key = IsShiftKeyDown()
+				if button == "LeftButton" then
+					if shift_key then
+						itemName, itemLink, itemQuality, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, sellPrice, classID, subclassID, bindType, expacID, setID, isCraftingReagent = GetItemInfo("item:"..k.."..::::::::::::2:6807:"..itemLevel)
+						SendChatMessage(itemLink)
 					end
-				end
-				);
-			else
-				f:SetScript("OnMouseDown",
-				function(self, button)
-					local shift_key = IsShiftKeyDown()
-					if button == "LeftButton" then
-						if shift_key then
-							itemName, itemLink, itemQuality, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, sellPrice, classID, subclassID, bindType, expacID, setID, isCraftingReagent = GetItemInfo("item:"..k.."..::::::::::::2:6807:"..itemLevel)
-							SendChatMessage(itemLink)
-						end
-					elseif button == "RightButton" then
+				elseif button == "RightButton" then
+					if itemFrame.favorite then
+						undoFavItem(self, itemFrame, k, itemLevel);
+					else
 						redoFavItem(self, itemFrame, k, itemLevel);
 					end
 				end
-				);
 			end
+			);
 		end
 		favoriteCount = favoriteCount + 1;
 	end
 
-	if add then
+	if not itemFrame.favorite then
 		for k,v in pairs(db.char.favoriteItems) do
 			if v == itemID then
 				-- already added
@@ -664,6 +656,7 @@ function createFavItem(frame, itemFrame, itemID, itemLevel, add)
 			end
 		end
 		tinsert(db.char.favoriteItems, itemID);
+		itemFrame.favorite = true;
 	else
 		local index = nil;
 		for k,v in pairs(db.char.favoriteItems) do
@@ -675,15 +668,8 @@ function createFavItem(frame, itemFrame, itemID, itemLevel, add)
 		if index ~= nil then
 			tremove(db.char.favoriteItems, index);
 		end
+		itemFrame.favorite = false;
 	end
-end
-
-function addFavoriteItem(frame, f, itemID, itemLevel)
-	createFavItem(frame, f, itemID, itemLevel, true);
-end
-
-function removeFavoriteItem(frame, f, itemID, itemLevel)
-	createFavItem(frame, f, itemID, itemLevel, false);
 end
 
 function createItems(frame, armorSelection, itemSlot, dungeonLevel, itemSource)
@@ -767,15 +753,15 @@ function createItems(frame, armorSelection, itemSlot, dungeonLevel, itemSource)
 			f.ico:SetPoint("BOTTOMLEFT", f, "TOPLEFT", 0, 0)
 			f.ico.prefix = "";
 			f.ico.suffix = "";
-			if not favorite then
-				if tcontains(db.char.favoriteItems, k) then
-					f.ico.prefix = icons.friend .. " ";
-				end
+			local isInFavorites = tcontains(db.char.favoriteItems, k);
+			if not favorite and isInFavorites then
+				f.ico.prefix = icon_favorite;
 			end
 			if itemIndex ~= 15 and v[1] == 15 then
 				f.ico.suffix = icons.DAMAGER;
 			end
 			f.ico:SetText(f.ico.prefix .. f.ico.suffix);
+			f.favorite = (favorite or isInFavorites) and true or false;
 			f:SetScript("OnEnter",
 			function()
 				GameTooltip:SetOwner(f, "ANCHOR_BOTTOMRIGHT",f:GetWidth(),f:GetHeight());
@@ -797,11 +783,7 @@ function createItems(frame, armorSelection, itemSlot, dungeonLevel, itemSource)
 						SendChatMessage(itemLink)
 					end
 				elseif button == "RightButton" then
-					if not favorite then
-						addFavoriteItem(frame, f, k, itemLevel);
-					else
-						removeFavoriteItem(frame, f, k, itemLevel);
-					end
+					createFavItem(frame, f, k, itemLevel);
 				end
 			end
 			);

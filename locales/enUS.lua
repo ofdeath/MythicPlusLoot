@@ -51,5 +51,4 @@ L["Source"] = "Source"
 L["Armor Type"] = "Armor Type"
 
 -- Other
-L["Added to favorites:"] = "Added to favorites:"
-L["Removed from favorites:"] = "Removed from favorites:"
+L["The profile %s doesn't exist"] = "The profile %s doesn't exist"

@@ -50,5 +50,4 @@ L["Source"] = "소스"
 L["Armor Type"] = "방어구 타입"
 
 -- Other
-L["Added to favorites:"] = "즐겨찾기 추가됨:"
-L["Removed from favorites:"] = "즐겨찾기 삭제됨:"
+L["The profile %s doesn't exist"] = "%s의 프로파일 없음"

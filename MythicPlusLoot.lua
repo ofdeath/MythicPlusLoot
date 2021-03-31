@@ -6,8 +6,9 @@ local sizey = 555;
 local frame;
 local framesInitialized;
 local itemsInitialized;
-
 local db;
+local currentProfileKey;
+
 local LDB;
 local LDBI;
 
@@ -24,6 +25,7 @@ local defaultSavedVars = {
 		}
  	},
 	profile = {
+		-- v = 1,		-- Reverved for version compatibility
 		armorType = 0,
 		slot = 0,
 		mythicLevel = 0,
@@ -77,7 +79,7 @@ function MythicPlusLoot:OnInitialize()
 		local minimapButton = LDB:NewDataObject("MythicPlusLoot", {
 			type = "launcher",
 			text = "MythicPlusLoot",
-			icon = "Interface\\AddOns\\MythicPlusLoot\\textures\\icon",
+			icon = ("Interface\\AddOns\\%s\\textures\\icon"):format(AddonName),
 			OnClick = function(button, buttonPressed)
 				if buttonPressed then
 					if not framesInitialized then
@@ -99,34 +101,65 @@ function MythicPlusLoot:OnInitialize()
 		LDBI:Refresh("MythicPlusLoot", db.global.minimap)
 	end
 
-	-- version compat.
-	if db.char ~= nil and db.char.favoriteItems ~= nil then
-		if db:GetCurrentProfile() == "Default" then
-			db:SetProfile(GetName("player") .. " - " .. GetRealmName())
-		end
-		db.profile.armorType = db.char.armorType;
-		db.profile.slot = db.char.slot;
-		db.profile.mythicLevel = db.char.mythicLevel;
-		db.profile.source = db.char.source;
-		db.profile.favoriteItems = db.char.favoriteItems;
-		-- unset db.char
-		db.char.armorType = nil;
-		db.char.slot = nil;
-		db.char.mythicLevel = nil;
-		db.char.source = nil;
-		db.char.favoriteItems = nil;
-	end
+	MPL:RegisterOptions()
 
+	self:VersionCompatibility(false)
 	self.db.RegisterCallback(self, "OnProfileChanged", "OnProfileChanged")
 	self.db.RegisterCallback(self, "OnProfileCopied", "OnProfileChanged")
 	self.db.RegisterCallback(self, "OnProfileReset", "OnProfileChanged")
-
-	MPL:RegisterOptions()
+	self.db.RegisterCallback(self, "OnNewProfile", "OnProfileAddRemoved")
+	self.db.RegisterCallback(self, "OnProfileDeleted", "OnProfileAddRemoved")
 end
 
 function MythicPlusLoot:OnProfileChanged(event, database, newProfileKey)
 	self.db = database
 	db = self.db
+
+	self:VersionCompatibility(true)
+	if newProfileKey ~= nil and newProfileKey ~= currentProfileKey then
+		closeMainFrame();
+	end
+end
+
+function MythicPlusLoot:OnProfileAddRemoved(event, database, profileKey)
+	self.db = database
+	db = self.db
+
+	closeMainFrame();
+end
+
+function MythicPlusLoot:VersionCompatibility(onChanged)
+	-- version compatibility
+	if db.profile.v ~= 1 then
+		if db.char ~= nil and db.char.favoriteItems ~= nil then
+			if not onChanged and db:GetCurrentProfile() == "Default" then
+				db:SetProfile(("%s - %s"):format(GetName("player"), GetRealmName()))
+			end
+			db.profile.armorType = db.char.armorType;
+			db.profile.slot = db.char.slot;
+			db.profile.mythicLevel = db.char.mythicLevel;
+			db.profile.source = db.char.source;
+			db.profile.favoriteItems = {};
+			db.profile.v = 1;
+			for k,v in pairs(db.char.favoriteItems) do
+				db.profile.favoriteItems[v] = "ALL";
+			end
+			-- unset db.char
+			db.char.armorType = nil;
+			db.char.slot = nil;
+			db.char.mythicLevel = nil;
+			db.char.source = nil;
+			db.char.favoriteItems = nil;
+		end
+		if db.profile.v == nil then
+			local favoriteItems = db.profile.favoriteItems;
+			db.profile.favoriteItems = {};
+			db.profile.v = 1;
+			for k,v in pairs(favoriteItems) do
+				db.profile.favoriteItems[v] = "ALL";
+			end
+		end
+	end
 end
 
 local icons = {
@@ -138,7 +171,7 @@ local icons = {
 	battlepet  = "|TInterface\\Timer\\Panda-Logo:15|t",
 	pettype    = "|TInterface\\TargetingFrame\\PetBadge-%s:14|t",
 	questboss  = "|TInterface\\TargetingFrame\\PortraitQuestBadge:0|t",
-	friend     = "|TInterface\\AddOns\\TinyTooltip\\texture\\friend:14:14:0:0:32:32:1:30:2:30|t",
+	friend     = ("|TInterface\\AddOns\\%s\\textures\\friend:14:14:0:0:32:32:1:30:2:30|t"):format(AddonName),
 	bnetfriend = "|TInterface\\ChatFrame\\UI-ChatIcon-BattleNet:14:14:0:0:32:32:1:30:2:30|t",
 	TANK       = "|TInterface\\LFGFrame\\UI-LFG-ICON-PORTRAITROLES:14:14:0:0:64:64:0:19:22:41|t",
 	HEALER     = "|TInterface\\LFGFrame\\UI-LFG-ICON-PORTRAITROLES:14:14:0:0:64:64:20:39:1:20|t",
@@ -549,63 +582,93 @@ function clearFrames()
 	end
 end
 
+function sendItemLink(itemLink)
+	local chatEditBox = ChatEdit_ChooseBoxForSend()
+	if not chatEditBox:IsShown() then
+		ChatEdit_ActivateChat(chatEditBox)
+	end
+	chatEditBox:Insert(itemLink)
+	--chatEditBox:HighlightText()
+end
+
+function getNextRole(role)
+	if role == "ALL" then
+		return "DAMAGER";
+	elseif role == "DAMAGER" then
+		return "TANK";
+	elseif role == "TANK" then
+		return "HEALER";
+	else
+		return "ALL";
+	end
+end
+
+function getRoleIcon(role)
+	if role == "ALL" then
+		return "";
+	else
+		return icons[role];
+	end
+end
+
 function undoFavItem(f, itemFrame, itemID, itemLevel)
-	f.ico:SetText(icon_unfavorite);
+	f.ico.prefix = icon_unfavorite;
+	f.ico:SetText(f.ico.prefix .. f.ico.suffix);
 	itemFrame.ico.prefix = icon_unfavorite;
 	itemFrame.ico:SetText(itemFrame.ico.prefix .. itemFrame.ico.suffix);
 
-	if true then
-		local index = nil;
-		for k,v in pairs(db.profile.favoriteItems) do
-			if v == itemID then
-				index = k;
-				break
-			end
-		end
-		if index ~= nil then
-			tremove(db.profile.favoriteItems, index);
-		end
-	end
+	db.profile.favoriteItems[itemID] = nil;
 	itemFrame.favorite = false;
 end
 
 function redoFavItem(f, itemFrame, itemID, itemLevel)
-	f.ico:SetText(icon_favorite);
+	f.ico.prefix = icon_favorite;
+	f.ico:SetText(f.ico.prefix .. f.ico.suffix);
 	itemFrame.ico.prefix = icon_favorite;
 	itemFrame.ico:SetText(itemFrame.ico.prefix .. itemFrame.ico.suffix);
 
-	if true then
-		for k,v in pairs(db.profile.favoriteItems) do
-			if v == itemID then
-				-- already added
-				return
-			end
-		end
-		tinsert(db.profile.favoriteItems, itemID);
+	db.profile.favoriteItems[itemID] = itemFrame.role;
+	itemFrame.favorite = true;
+end
+
+function changeFavRole(f, itemFrame, itemID, itemLevel)
+	local role = getNextRole(itemFrame.role);
+	local roleIcon = getRoleIcon(role);
+	if not itemFrame.favorite then
+		f.ico.prefix = icon_favorite;
+		itemFrame.ico.prefix = icon_favorite;
 	end
+	f.ico.suffix = roleIcon;
+	f.ico:SetText(f.ico.prefix .. f.ico.suffix);
+	itemFrame.ico.suffix = roleIcon;
+	itemFrame.ico:SetText(itemFrame.ico.prefix .. itemFrame.ico.suffix);
+	itemFrame.role = role;
+
+	db.profile.favoriteItems[itemID] = role;
 	itemFrame.favorite = true;
 end
 
 function createFavItem(frame, itemFrame, itemID, itemLevel)
 	local xStart = sizex + 10;
 	local xItemStart, yItemStart, yItemOffset, xItemSecondColumn = xStart, -120, -220, 325;
+	local tmpFavCount = 0;
+	local role = itemFrame.role;
 
-	local favoriteCount = 0;
-	for k,v in pairs(tmpFavItems) do
-		if v == itemID then
-			-- already added
-			if itemFrame.favorite then
-				undoFavItem(itemFrame.fav, itemFrame, itemID, itemLevel);
-			else
-				redoFavItem(itemFrame.fav, itemFrame, itemID, itemLevel);
-			end
-			return
+	if tmpFavItems[itemID] ~= nil then
+		-- already added
+		if itemFrame.favorite then
+			undoFavItem(itemFrame.fav, itemFrame, itemID, itemLevel);
+		else
+			redoFavItem(itemFrame.fav, itemFrame, itemID, itemLevel);
 		end
-		favoriteCount = favoriteCount + 1;
+		return
 	end
-	tinsert(tmpFavItems, itemID);
+	tmpFavItems[itemID] = true;
+	for _ in pairs(tmpFavItems) do
+		tmpFavCount = tmpFavCount + 1;
+	end
 
-	if favoriteCount == 0 then
+	if tmpFavCount == 1 then
 		local justifyH = "RIGHT";
 		local offsetX = xStart;
 		local offsetY = yStart;
@@ -628,7 +691,7 @@ function createFavItem(frame, itemFrame, itemID, itemLevel)
 		tinsert(favframepool, f);
 		f:SetSize(xSize, ySize);
 
-		local x = xItemStart + xSize/4 + favoriteCount*xSize*1.5;
+		local x = xItemStart + xSize/4 + (tmpFavCount - 1)*xSize*1.5;
 		local y = yItemStart - ySize + ySize/4;
 		if true then
 			f:SetPoint("TOPLEFT", frame, "TOPLEFT", x, y);
@@ -638,12 +701,14 @@ function createFavItem(frame, itemFrame, itemID, itemLevel)
 			f.ico = f:CreateFontString(f, "OVERLAY", "GameTooltipText")
 			f.ico:SetPoint("BOTTOMLEFT", f, "TOPLEFT", 0, 0)
 			if itemFrame.favorite then
-				f.ico:SetText(icon_unfavorite);
+				f.ico.prefix = icon_unfavorite;
 				itemFrame.ico.prefix = icon_unfavorite;
 			else
-				f.ico:SetText(icon_favorite);
+				f.ico.prefix = icon_favorite;
 				itemFrame.ico.prefix = icon_favorite;
 			end
+			f.ico.suffix = getRoleIcon(role);
+			f.ico:SetText(f.ico.prefix .. f.ico.suffix);
 			itemFrame.ico:SetText(itemFrame.ico.prefix .. itemFrame.ico.suffix);
 			itemFrame.fav = f;
 			f:SetScript("OnEnter",
@@ -664,41 +729,21 @@ function createFavItem(frame, itemFrame, itemID, itemLevel)
 				if button == "LeftButton" then
 					if shift_key then
 						itemName, itemLink, itemQuality, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, sellPrice, classID, subclassID, bindType, expacID, setID, isCraftingReagent = GetItemInfo("item:"..k.."..::::::::::::2:6807:"..itemLevel)
-						SendChatMessage(itemLink)
+						sendItemLink(itemLink)
 					end
 				elseif button == "RightButton" then
-					if itemFrame.favorite then
-						undoFavItem(self, itemFrame, k, itemLevel);
-					else
-						redoFavItem(self, itemFrame, k, itemLevel);
-					end
+					changeFavRole(self, itemFrame, k, itemLevel);
 				end
 			end
 			);
 		end
-		favoriteCount = favoriteCount + 1;
 	end
 
 	if not itemFrame.favorite then
-		for k,v in pairs(db.profile.favoriteItems) do
-			if v == itemID then
-				-- already added
-				return
-			end
-		end
-		tinsert(db.profile.favoriteItems, itemID);
+		db.profile.favoriteItems[itemID] = role;
 		itemFrame.favorite = true;
 	else
-		local index = nil;
-		for k,v in pairs(db.profile.favoriteItems) do
-			if v == itemID then
-				index = k;
-				break
-			end
-		end
-		if index ~= nil then
-			tremove(db.profile.favoriteItems, index);
-		end
+		db.profile.favoriteItems[itemID] = nil;
 		itemFrame.favorite = false;
 	end
 end
@@ -725,10 +770,10 @@ function createItems(frame, armorSelection, itemSlot, dungeonLevel, itemSource)
 	local armorIndex = getIndex(armorTypes, armorSelection);
 	local dungeonIndex = indexTable(dungeonList);
 
-	local favorite = (itemIndex == 17) and true or false;
+	local favoriteMode = (itemIndex == 17) and true or false;
 	-- get items
 	local itemList = {};
-	if not favorite then
+	if not favoriteMode then
 		for k,v in pairs(dungeonItems) do
 			if v[1] == itemIndex and (v[2] == armorIndex or v[2] == 5) then
 				itemList[k] = v;
@@ -736,9 +781,9 @@ function createItems(frame, armorSelection, itemSlot, dungeonLevel, itemSource)
 		end
 	else
 		for k,v in pairs(db.profile.favoriteItems) do
-			dv = dungeonItems[v];
+			dv = dungeonItems[k];
 			if (dv[2] == armorIndex or dv[2] == 5) then
-				itemList[v] = dv;
+				itemList[k] = dv;
 			end
 		end
 	end
@@ -784,15 +829,19 @@ function createItems(frame, armorSelection, itemSlot, dungeonLevel, itemSource)
 			f.ico:SetPoint("BOTTOMLEFT", f, "TOPLEFT", 0, 0)
 			f.ico.prefix = "";
 			f.ico.suffix = "";
-			local isInFavorites = tcontains(db.profile.favoriteItems, k);
-			if not favorite and isInFavorites then
+			local isInFavorites = (db.profile.favoriteItems[k] ~= nil);
+			if isInFavorites then
+				f.role = db.profile.favoriteItems[k];
+			else
+				f.role = "ALL";
+			end
+			if not favoriteMode and isInFavorites then
 				f.ico.prefix = icon_favorite;
 			end
-			if itemIndex ~= 15 and v[1] == 15 then
-				f.ico.suffix = icons.DAMAGER;
-			end
+			f.ico.suffix = getRoleIcon(f.role);
 			f.ico:SetText(f.ico.prefix .. f.ico.suffix);
-			f.favorite = (favorite or isInFavorites) and true or false;
+			f.favorite = (favoriteMode or isInFavorites) and true or false;
+			f.favoriteMode = favoriteMode;
 			f:SetScript("OnEnter",
 			function()
 				GameTooltip:SetOwner(f, "ANCHOR_BOTTOMRIGHT",f:GetWidth(),f:GetHeight());
@@ -811,7 +860,7 @@ function createItems(frame, armorSelection, itemSlot, dungeonLevel, itemSource)
 				if button == "LeftButton" then
 					if shift_key then
 						itemName, itemLink, itemQuality, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, sellPrice, classID, subclassID, bindType, expacID, setID, isCraftingReagent = GetItemInfo("item:"..k.."..::::::::::::2:6807:"..itemLevel)
-						SendChatMessage(itemLink)
+						sendItemLink(itemLink)
 					end
 				elseif button == "RightButton" then
 					createFavItem(frame, f, k, itemLevel);
@@ -889,6 +938,9 @@ function initFrames()
 				end
 			end
 		);
+		if armorText ~= L["Armor Type"] then
+			UIDropDownMenu_SetSelectedValue(armorDropDown, armorText);
+		end
 		-- Implement the function to change the value
 		function armorDropDown:SetValue(newValue)
 			db.profile.armorType = getIndex(armorTypes, newValue);
@@ -939,6 +991,9 @@ function initFrames()
 				end
 			end
 		);
+		if slotText ~= L["Item Slot"] then
+			UIDropDownMenu_SetSelectedValue(slotDropDown, slotText);
+		end
 		-- Implement the function to change the value
 		function slotDropDown:SetValue(newValue)
 			db.profile.slot = getIndex(gearSlots, newValue);
@@ -976,6 +1031,9 @@ function initFrames()
 				end
 			end
 		);
+		if mythicText ~= L["Mythic Level"] then
+			UIDropDownMenu_SetSelectedValue(mythicDropDown, mythicText);
+		end
 		-- Implement the function to change the value
 		function mythicDropDown:SetValue(newValue)
 			db.profile.mythicLevel = getIndex(mythicLevels, newValue);
@@ -1013,6 +1071,9 @@ function initFrames()
 				end
 			end
 		);
+		if sourceText ~= L["Source"] then
+			UIDropDownMenu_SetSelectedValue(sourceDropDown, sourceText);
+		end
 		-- Implement the function to change the value
 		function sourceDropDown:SetValue(newValue)
 			db.profile.source = getIndex(sourceList, newValue);
@@ -1050,9 +1111,16 @@ function initFrames()
 				end
 			end
 		);
+		UIDropDownMenu_SetSelectedValue(profileDropDown, profileText);
 		-- Implement the function to change the value
 		function profileDropDown:SetValue(newValue)
+			if not tcontains(db:GetProfiles(), newValue) then
+				DEFAULT_CHAT_MESSAGE:AddMessage((L["The profile %s doesn't exist"]):format(newValue));
+				return
+			end
+			currentProfileKey = newValue;
 			db:SetProfile(newValue);
+
 			profileText = newValue;
 			UIDropDownMenu_SetSelectedValue(profileDropDown, profileText);
 
@@ -1060,6 +1128,22 @@ function initFrames()
 			slotText = (db.profile.slot > 0) and gearSlots[db.profile.slot] or L["Item Slot"];
 			mythicText = (db.profile.mythicLevel > 0) and mythicLevels[db.profile.mythicLevel] or L["Mythic Level"];
 			sourceText = (db.profile.source > 0) and sourceList[db.profile.source] or L["Source"];
+			if armorText ~= L["Armor Type"] then
+				UIDropDownMenu_SetSelectedValue(armorDropDown, armorText);
+				UIDropDownMenu_SetText(armorDropDown, armorText);
+			end
+			if slotText ~= L["Item Slot"] then
+				UIDropDownMenu_SetSelectedValue(slotDropDown, slotText);
+				UIDropDownMenu_SetText(slotDropDown, slotText);
+			end
+			if mythicText ~= L["Mythic Level"] then
+				UIDropDownMenu_SetSelectedValue(mythicDropDown, mythicText);
+				UIDropDownMenu_SetText(mythicDropDown, mythicText);
+			end
+			if sourceText ~= L["Source"] then
+				UIDropDownMenu_SetSelectedValue(sourceDropDown, sourceText);
+				UIDropDownMenu_SetText(sourceDropDown, sourceText);
+			end
 
 			if armorText ~= L["Armor Type"] and slotText ~= L["Item Slot"] and mythicText ~= L["Mythic Level"] then
 				createItems(frame, armorText, slotText, tonumber(mythicText), sourceText);

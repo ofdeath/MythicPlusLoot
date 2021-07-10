@@ -33,6 +33,7 @@ L["Favorites"] = "Favorites"
 -- Source list
 L["Dungeon Drop"] = "Dungeon Drop"
 L["Weekly Vault"] = "Weekly Vault"
+L["Valor Upgrade"] = "Valor Upgrade"
 
 -- Dungeons
 L["Plaguefall"] = "Plaguefall"

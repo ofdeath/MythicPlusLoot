@@ -32,6 +32,7 @@ L["Favorites"] = "즐겨찾기"
 -- Source list
 L["Dungeon Drop"] = "던전 드랍"
 L["Weekly Vault"] = "금고 보상"
+L["Valor Upgrade"] = "용맹 강화"
 
 -- Dungeons
 L["Plaguefall"] = "역병 몰락지 (Plaguefall)"

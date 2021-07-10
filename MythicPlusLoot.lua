@@ -181,39 +181,54 @@ local icon_favorite = icons.friend;
 local icon_unfavorite = icons.bnetfriend;
 
 local iLevelListDrop = {
-	[1] = 184,
-	[2] = 187,
-	[3] = 190,
-	[4] = 194,
-	[5] = 194,
-	[6] = 197,
-	[7] = 200,
-	[8] = 200,
-	[9] = 200,
-	[10] = 203,
-	[11] = 203,
-	[12] = 207,
-	[13] = 207,
-	[14] = 207,
-	[15] = 210
+	[1] = 210,
+	[2] = 210,
+	[3] = 213,
+	[4] = 216,
+	[5] = 220,
+	[6] = 223,
+	[7] = 223,
+	[8] = 226,
+	[9] = 226,
+	[10] = 229,
+	[11] = 229,
+	[12] = 233,
+	[13] = 233,
+	[14] = 236,
+	[15] = 236
 }
 
 local iLevelListChest = {
-	[1] = 184,
-	[2] = 200,
-	[3] = 203,
-	[4] = 207,
-	[5] = 210,
-	[6] = 210,
-	[7] = 213,
-	[8] = 216,
-	[9] = 216,
-	[10] = 220,
-	[11] = 220,
-	[12] = 223,
-	[13] = 223,
-	[14] = 226,
-	[15] = 226
+	[1] = 210,
+	[2] = 223,
+	[3] = 226,
+	[4] = 229,
+	[5] = 233,
+	[6] = 236,
+	[7] = 236,
+	[8] = 239,
+	[9] = 239,
+	[10] = 242,
+	[11] = 242,
+	[12] = 246,
+	[13] = 246,
+	[14] = 249,
+	[15] = 252
+}
+
+local iLevelListValor = {
+	[1] = 210,
+	[2] = 213,
+	[3] = 216,
+	[4] = 220,
+	[5] = 223,
+	[6] = 226,
+	[7] = 229,
+	[8] = 233,
+	[9] = 236,
+	[10] = 239,
+	[11] = 242,
+	[12] = 246
 }
 
 local armorTypes = {
@@ -264,6 +279,7 @@ local mythicLevels = {
 local sourceList = {
 	[1] = L["Dungeon Drop"],
 	[2] = L["Weekly Vault"],
+	[3] = L["Valor Upgrade"],
 }
 
 local dungeonList = {
@@ -792,6 +808,11 @@ function createItems(frame, armorSelection, itemSlot, dungeonLevel, itemSource)
 	local itemLevel;
 	if itemSource == L["Weekly Vault"] and dungeonLevel ~= 0 then
 		itemLevel = iLevelListChest[dungeonLevel];
+	elseif itemSource == L["Valor Upgrade"] and dungeonLevel ~= 0 then
+		if dungeonLevel > 12 then
+			dungeonLevel = 12;
+		end
+		itemLevel = iLevelListValor[dungeonLevel];
 	elseif dungeonLevel ~= 0 then
 		itemLevel = iLevelListDrop[dungeonLevel];
 	else
@@ -874,7 +895,7 @@ function createItems(frame, armorSelection, itemSlot, dungeonLevel, itemSource)
 	itemsInitialized = true;
 end
 
-local armorText, slotText, mythicText, sourceText;
+local armorText, slotText, mythicValue, mythicLevel, mythicText, sourceText;
 MPL.BackdropColor = { 0.058823399245739, 0.058823399245739, 0.058823399245739, 0.9}
 
 function closeMainFrame()
@@ -947,9 +968,9 @@ function initFrames()
 			armorText = newValue;
 			UIDropDownMenu_SetSelectedValue(armorDropDown, armorText);
 			if armorText ~= L["Armor Type"] and slotText ~= L["Item Slot"] and mythicText ~= L["Mythic Level"] then
-				createItems(frame, armorText, slotText, tonumber(mythicText), sourceText);
+				createItems(frame, armorText, slotText, mythicLevel, sourceText);
 			elseif armorText == L["Armor Type"] and (slotText == L["Neck"] or slotText == L["Back"] or slotText == L["Finger"] or slotText == L["Trinket"] or slotText == L["One-Hand"] or slotText == L["Off-Hand"] or slotText == L["Two-Hand"] or slotText == L["Ranged"]) and mythicText ~= L["Mythic Level"] then
-				createItems(frame, L["Cloth"], slotText, tonumber(mythicText), sourceText);
+				createItems(frame, L["Cloth"], slotText, mythicLevel, sourceText);
 			else
 				clearFrames();
 			end
@@ -1000,9 +1021,9 @@ function initFrames()
 			slotText = newValue;
 			UIDropDownMenu_SetSelectedValue(slotDropDown, slotText);
 			if armorText ~= L["Armor Type"] and slotText ~= L["Item Slot"] and mythicText ~= L["Mythic Level"] then
-				createItems(frame, armorText, slotText, tonumber(mythicText), sourceText);
+				createItems(frame, armorText, slotText, mythicLevel, sourceText);
 			elseif armorText == L["Armor Type"] and (slotText == L["Neck"] or slotText == L["Back"] or slotText == L["Finger"] or slotText == L["Trinket"] or slotText == L["One-Hand"] or slotText == L["Off-Hand"] or slotText == L["Two-Hand"] or slotText == L["Ranged"]) and mythicText ~= L["Mythic Level"] then
-				createItems(frame, L["Cloth"], slotText, tonumber(mythicText), sourceText);
+				createItems(frame, L["Cloth"], slotText, mythicLevel, sourceText);
 			else
 				clearFrames();
 			end
@@ -1010,39 +1031,56 @@ function initFrames()
 		end
 
 		-- mythic level drop down
-		mythicText = (db.profile.mythicLevel > 0) and mythicLevels[db.profile.mythicLevel] or L["Mythic Level"];
+		mythicValue = (db.profile.mythicLevel > 0) and mythicLevels[db.profile.mythicLevel] or L["Mythic Level"];
+		mythicLevel = db.profile.mythicLevel;
 		local mythicDropDown = CreateFrame("Frame", "MPLMythicDropDown", frame, "UIDropDownMenuTemplate");
 		mythicDropDown:SetPoint("TOPLEFT", frame, "TOPLEFT", 300, -10);
 		UIDropDownMenu_SetWidth(mythicDropDown, dropDownWidth);
 		UIDropDownMenu_Initialize(mythicDropDown, MPLMythicDropDown_Menu);
-		UIDropDownMenu_SetText(mythicDropDown, mythicText);
-		UIDropDownMenu_Initialize(mythicDropDown,
-			function(self, level, menuList)
-				local info = UIDropDownMenu_CreateInfo();
-				info.func = self.SetValue;
-				for i=1,15 do
-					info.text = mythicLevels[i];
-					info.menuList = i;
-					info.hasArrow = false;
-					info.value = mythicLevels[i];
-					info.arg1 = mythicLevels[i];
-					info.checked = false;
-					UIDropDownMenu_AddButton(info);
+		local setMythicDropDownButtons = function()
+			UIDropDownMenu_Initialize(mythicDropDown,
+				function(self, level, menuList)
+					local info = UIDropDownMenu_CreateInfo();
+					info.func = self.SetValue;
+					for i=1,15 do
+						if sourceText ~= L["Valor Upgrade"] then
+							info.text = mythicLevels[i];
+						else
+							info.text = (i < 12) and tostring(i) or "12";
+						end
+						info.menuList = i;
+						info.hasArrow = false;
+						info.value = mythicLevels[i];
+						info.arg1 = mythicLevels[i];
+						info.checked = false;
+						UIDropDownMenu_AddButton(info);
+					end
 				end
+			);
+		end
+		local setMythicDropDownText = function(setValue)
+			if mythicValue ~= L["Mythic Level"] then
+				if sourceText ~= L["Valor Upgrade"] then
+					mythicText = mythicValue;
+				else
+					mythicText = (db.profile.mythicLevel < 12) and tostring(db.profile.mythicLevel) or "12";
+				end
+				if setValue then
+					UIDropDownMenu_SetSelectedValue(mythicDropDown, mythicValue);
+				end
+				UIDropDownMenu_SetText(mythicDropDown, mythicText);
 			end
-		);
-		if mythicText ~= L["Mythic Level"] then
-			UIDropDownMenu_SetSelectedValue(mythicDropDown, mythicText);
 		end
 		-- Implement the function to change the value
 		function mythicDropDown:SetValue(newValue)
 			db.profile.mythicLevel = getIndex(mythicLevels, newValue);
-			mythicText = newValue;
-			UIDropDownMenu_SetSelectedValue(mythicDropDown, mythicText);
+			mythicValue = newValue;
+			mythicLevel = db.profile.mythicLevel;
+			setMythicDropDownText(true);
 			if armorText ~= L["Armor Type"] and slotText ~= L["Item Slot"] and mythicText ~= L["Mythic Level"] then
-				createItems(frame, armorText, slotText, tonumber(mythicText), sourceText);
+				createItems(frame, armorText, slotText, mythicLevel, sourceText);
 			elseif armorText == L["Armor Type"] and (slotText == L["Neck"] or slotText == L["Back"] or slotText == L["Finger"] or slotText == L["Trinket"] or slotText == L["One-Hand"] or slotText == L["Off-Hand"] or slotText == L["Two-Hand"] or slotText == L["Ranged"]) and mythicText ~= L["Mythic Level"] then
-				createItems(frame, L["Cloth"], slotText, tonumber(mythicText), sourceText);
+				createItems(frame, L["Cloth"], slotText, mythicLevel, sourceText);
 			else
 				clearFrames();
 			end
@@ -1051,6 +1089,8 @@ function initFrames()
 
 		-- dungeon or chest drop down
 		sourceText = (db.profile.source > 0) and sourceList[db.profile.source] or L["Source"];
+		setMythicDropDownButtons();
+		setMythicDropDownText(true);
 		local sourceDropDown = CreateFrame("Frame", "MPLSourceDropDown", frame, "UIDropDownMenuTemplate");
 		sourceDropDown:SetPoint("TOPLEFT", frame, "TOPLEFT", 450, -10);
 		UIDropDownMenu_SetWidth(sourceDropDown, dropDownWidth);
@@ -1060,7 +1100,7 @@ function initFrames()
 			function(self, level, menuList)
 				local info = UIDropDownMenu_CreateInfo();
 				info.func = self.SetValue;
-				for i=1,2 do
+				for i=1,3 do
 					info.text = sourceList[i];
 					info.menuList = i;
 					info.hasArrow = false;
@@ -1079,10 +1119,12 @@ function initFrames()
 			db.profile.source = getIndex(sourceList, newValue);
 			sourceText = newValue;
 			UIDropDownMenu_SetSelectedValue(sourceDropDown, sourceText);
+			setMythicDropDownButtons();
+			setMythicDropDownText(false);
 			if armorText ~= L["Armor Type"] and slotText ~= L["Item Slot"] and mythicText ~= L["Mythic Level"] then
-				createItems(frame, armorText, slotText, tonumber(mythicText), sourceText);
+				createItems(frame, armorText, slotText, mythicLevel, sourceText);
 			elseif armorText == L["Armor Type"] and (slotText == L["Neck"] or slotText == L["Back"] or slotText == L["Finger"] or slotText == L["Trinket"] or slotText == L["One-Hand"] or slotText == L["Off-Hand"] or slotText == L["Two-Hand"] or slotText == L["Ranged"]) and mythicText ~= L["Mythic Level"] then
-				createItems(frame, L["Cloth"], slotText, tonumber(mythicText), sourceText);
+				createItems(frame, L["Cloth"], slotText, mythicLevel, sourceText);
 			else
 				clearFrames();
 			end
@@ -1126,7 +1168,8 @@ function initFrames()
 
 			armorText = (db.profile.armorType > 0) and armorTypes[db.profile.armorType] or L["Armor Type"];
 			slotText = (db.profile.slot > 0) and gearSlots[db.profile.slot] or L["Item Slot"];
-			mythicText = (db.profile.mythicLevel > 0) and mythicLevels[db.profile.mythicLevel] or L["Mythic Level"];
+			mythicValue = (db.profile.mythicLevel > 0) and mythicLevels[db.profile.mythicLevel] or L["Mythic Level"];
+			mythicLevel = db.profile.mythicLevel;
 			sourceText = (db.profile.source > 0) and sourceList[db.profile.source] or L["Source"];
 			if armorText ~= L["Armor Type"] then
 				UIDropDownMenu_SetSelectedValue(armorDropDown, armorText);
@@ -1136,19 +1179,16 @@ function initFrames()
 				UIDropDownMenu_SetSelectedValue(slotDropDown, slotText);
 				UIDropDownMenu_SetText(slotDropDown, slotText);
 			end
-			if mythicText ~= L["Mythic Level"] then
-				UIDropDownMenu_SetSelectedValue(mythicDropDown, mythicText);
-				UIDropDownMenu_SetText(mythicDropDown, mythicText);
-			end
+			setMythicDropDownText(true);
 			if sourceText ~= L["Source"] then
 				UIDropDownMenu_SetSelectedValue(sourceDropDown, sourceText);
 				UIDropDownMenu_SetText(sourceDropDown, sourceText);
 			end
 
 			if armorText ~= L["Armor Type"] and slotText ~= L["Item Slot"] and mythicText ~= L["Mythic Level"] then
-				createItems(frame, armorText, slotText, tonumber(mythicText), sourceText);
+				createItems(frame, armorText, slotText, mythicLevel, sourceText);
 			elseif armorText == L["Armor Type"] and (slotText == L["Neck"] or slotText == L["Back"] or slotText == L["Finger"] or slotText == L["Trinket"] or slotText == L["One-Hand"] or slotText == L["Off-Hand"] or slotText == L["Two-Hand"] or slotText == L["Ranged"]) and mythicText ~= L["Mythic Level"] then
-				createItems(frame, L["Cloth"], slotText, tonumber(mythicText), sourceText);
+				createItems(frame, L["Cloth"], slotText, mythicLevel, sourceText);
 			else
 				clearFrames();
 			end
@@ -1160,7 +1200,7 @@ function initFrames()
 
 		-- Item icons
 		if mythicText ~= L["Mythic Level"] then
-			createItems(frame, armorText, slotText, tonumber(mythicText), sourceText);
+			createItems(frame, armorText, slotText, mythicLevel, sourceText);
 		end
 		framesInitialized = true;
 	end

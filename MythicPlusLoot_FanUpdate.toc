@@ -1,5 +1,5 @@
 ## Interface: 90002
-## Title: MythicPlusLoot
+## Title: MythicPlusLoot FanUpdate by Jay
 ## Author: Scott Davis
 ## Version: 0.0.3
 ## Notes: Gear scaling for m+ dungeons.

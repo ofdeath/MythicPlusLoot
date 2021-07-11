@@ -28,10 +28,12 @@ L["One-Hand"] = "One-Hand"
 L["Off-Hand"] = "Off-Hand"
 L["Two-Hand"] = "Two-Hand"
 L["Ranged"] = "Ranged"
+L["Favorites"] = "Favorites"
 
 -- Source list
 L["Dungeon Drop"] = "Dungeon Drop"
 L["Weekly Vault"] = "Weekly Vault"
+L["Valor Upgrade"] = "Valor Upgrade"
 
 -- Dungeons
 L["Plaguefall"] = "Plaguefall"
@@ -48,3 +50,6 @@ L["Item Slot"] = "Item Slot"
 L["Mythic Level"] = "Mythic Level"
 L["Source"] = "Source"
 L["Armor Type"] = "Armor Type"
+
+-- Other
+L["The profile %s doesn't exist"] = "The profile %s doesn't exist"

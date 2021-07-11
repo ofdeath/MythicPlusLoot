@@ -6,9 +6,11 @@ local sizey = 555;
 local frame;
 local framesInitialized;
 local itemsInitialized;
+local db;
+local currentProfileKey;
 
-local LDB = LibStub("LibDataBroker-1.1")
-local LDBI = LibStub("LibDBIcon-1.0")
+local LDB;
+local LDBI;
 
 SLASH_MYTHICPLUSLOOT1 = "/mpl";
 
@@ -21,50 +23,63 @@ local defaultSavedVars = {
 		minimap = {
 		["hide"] = false,
 		}
+ 	},
+	profile = {
+		-- v = 1,		-- Reverved for version compatibility
+		armorType = 0,
+		slot = 0,
+		mythicLevel = 0,
+		source = 0,
+		favoriteItems = {},
 	}
 }
 
 -- Options menu
 function MPL:RegisterOptions()
-    MPL.blizzardOptionsMenuTable = {
-        name = "Mythic Plus Loot",
-        type = 'group',
-        args = {
-            enable = {
-                type = 'toggle',
-                name = L["Enable Minimap Button"],
-                desc = L["If the Minimap Button is enabled"],
-                get = function() return not db.minimap.hide end,
-                set = function(_, newValue)
-                    db.minimap.hide = not newValue
-                    if not db.minimap.hide then
-                        LDBI:Show("MythicPlusLoot")
-                    else
-                        LDBI:Hide("MythicPlusLoot")
-                    end
-                end,
-                order = 1,
-                width = "full",
-            },
-        }
-    }
+	MPL.blizzardOptionsMenuTable = {
+		name = "Mythic Plus Loot",
+		type = 'group',
+		args = {
+			enable = {
+				type = 'toggle',
+				name = L["Enable Minimap Button"],
+				desc = L["If the Minimap Button is enabled"],
+				get = function() return not db.global.minimap.hide end,
+				set = function(_, newValue)
+					db.global.minimap.hide = not newValue
+					if not db.global.minimap.hide then
+						LDBI:Show("MythicPlusLoot")
+					else
+						LDBI:Hide("MythicPlusLoot")
+					end
+				end,
+				order = 1,
+				width = "full",
+			},
+		}
+	}
 	LibStub("AceConfigRegistry-3.0"):RegisterOptionsTable("MythicPlusLoot", MPL.blizzardOptionsMenuTable)
 	self.blizzardOptionsMenu = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("MythicPlusLoot", "MythicPlusLoot")
+
+	LibStub("AceConfig-3.0"):RegisterOptionsTable("Profile", LibStub("AceDBOptions-3.0"):GetOptionsTable(db))
+	self.blizOptProfiles = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("Profile", "Profiles", "MythicPlusLoot")
 end
 
 -- DB stuff and minimap button
-MythicPlusLoot = LibStub("AceAddon-3.0"):NewAddon("MythicPlusLootDB")
-db = LibStub("AceDB-3.0"):New("MythicPlusLootDB", defaultSavedVars, true)
+MythicPlusLoot = LibStub("AceAddon-3.0"):NewAddon("MythicPlusLoot")
+
 function MythicPlusLoot:OnInitialize()
-  local LDB = LibStub("LibDataBroker-1.1", true)
-	local LDBIcon = LDB and LibStub("LibDBIcon-1.0", true)
-	--local db;
+	self.db = LibStub("AceDB-3.0"):New("MythicPlusLootDB", defaultSavedVars)
+	db = self.db
+
+	LDB = LibStub("LibDataBroker-1.1", true)
+	LDBI = LDB and LibStub("LibDBIcon-1.0", true)
 
 	if LDB then
 		local minimapButton = LDB:NewDataObject("MythicPlusLoot", {
 			type = "launcher",
 			text = "MythicPlusLoot",
-			icon = "Interface\\AddOns\\MythicPlusLoot\\textures\\icon",
+			icon = ("Interface\\AddOns\\%s\\textures\\icon"):format(AddonName),
 			OnClick = function(button, buttonPressed)
 				if buttonPressed then
 					if not framesInitialized then
@@ -80,50 +95,140 @@ function MythicPlusLoot:OnInitialize()
 				tooltip:AddLine("Click to toggle AddOn Window")
 			end,
 		})
-		db = LibStub("AceDB-3.0"):New("MythicPlusLootDB", defaultSavedVars).global
-		LDBIcon:Register("MythicPlusLoot", minimapButton, db.minimap)
+		LDBI:Register("MythicPlusLoot", minimapButton, db.global.minimap)
 	end
-	if not db.minimap.hide then
-		LDBIcon:Refresh("MythicPlusLoot", db.minimap)
+	if not db.global.minimap.hide then
+		LDBI:Refresh("MythicPlusLoot", db.global.minimap)
 	end
-	
+
 	MPL:RegisterOptions()
+
+	self:VersionCompatibility(false)
+	self.db.RegisterCallback(self, "OnProfileChanged", "OnProfileChanged")
+	self.db.RegisterCallback(self, "OnProfileCopied", "OnProfileChanged")
+	self.db.RegisterCallback(self, "OnProfileReset", "OnProfileChanged")
+	self.db.RegisterCallback(self, "OnNewProfile", "OnProfileAddRemoved")
+	self.db.RegisterCallback(self, "OnProfileDeleted", "OnProfileAddRemoved")
 end
 
+function MythicPlusLoot:OnProfileChanged(event, database, newProfileKey)
+	self.db = database
+	db = self.db
+
+	self:VersionCompatibility(true)
+	if newProfileKey ~= nil and newProfileKey ~= currentProfileKey then
+		closeMainFrame();
+	end
+end
+
+function MythicPlusLoot:OnProfileAddRemoved(event, database, profileKey)
+	self.db = database
+	db = self.db
+
+	closeMainFrame();
+end
+
+function MythicPlusLoot:VersionCompatibility(onChanged)
+	-- version compatibility
+	if db.profile.v ~= 1 then
+		if db.char ~= nil and db.char.favoriteItems ~= nil then
+			if not onChanged and db:GetCurrentProfile() == "Default" then
+				db:SetProfile(("%s - %s"):format(GetName("player"), GetRealmName()))
+			end
+			db.profile.armorType = db.char.armorType;
+			db.profile.slot = db.char.slot;
+			db.profile.mythicLevel = db.char.mythicLevel;
+			db.profile.source = db.char.source;
+			db.profile.favoriteItems = {};
+			db.profile.v = 1;
+			for k,v in pairs(db.char.favoriteItems) do
+				db.profile.favoriteItems[v] = "ALL";
+			end
+			-- unset db.char
+			db.char.armorType = nil;
+			db.char.slot = nil;
+			db.char.mythicLevel = nil;
+			db.char.source = nil;
+			db.char.favoriteItems = nil;
+		end
+		if db.profile.v == nil then
+			local favoriteItems = db.profile.favoriteItems;
+			db.profile.favoriteItems = {};
+			db.profile.v = 1;
+			for k,v in pairs(favoriteItems) do
+				db.profile.favoriteItems[v] = "ALL";
+			end
+		end
+	end
+end
+
+local icons = {
+	Alliance   = "|TInterface\\TargetingFrame\\UI-PVP-ALLIANCE:14:14:0:0:64:64:10:36:2:38|t",
+	Horde      = "|TInterface\\TargetingFrame\\UI-PVP-HORDE:14:14:0:0:64:64:4:38:2:36|t",
+	Neutral    = "|TInterface\\Timer\\Panda-Logo:14|t",
+	pvp        = "|TInterface\\TargetingFrame\\UI-PVP-FFA:14:14:0:0:64:64:10:36:0:38|t",
+	class      = "|TInterface\\TargetingFrame\\UI-Classes-Circles:14:14:0:0:256:256:%d:%d:%d:%d|t",
+	battlepet  = "|TInterface\\Timer\\Panda-Logo:15|t",
+	pettype    = "|TInterface\\TargetingFrame\\PetBadge-%s:14|t",
+	questboss  = "|TInterface\\TargetingFrame\\PortraitQuestBadge:0|t",
+	friend     = ("|TInterface\\AddOns\\%s\\textures\\friend:14:14:0:0:32:32:1:30:2:30|t"):format(AddonName),
+	bnetfriend = "|TInterface\\ChatFrame\\UI-ChatIcon-BattleNet:14:14:0:0:32:32:1:30:2:30|t",
+	TANK       = "|TInterface\\LFGFrame\\UI-LFG-ICON-PORTRAITROLES:14:14:0:0:64:64:0:19:22:41|t",
+	HEALER     = "|TInterface\\LFGFrame\\UI-LFG-ICON-PORTRAITROLES:14:14:0:0:64:64:20:39:1:20|t",
+	DAMAGER    = "|TInterface\\LFGFrame\\UI-LFG-ICON-PORTRAITROLES:14:14:0:0:64:64:20:39:22:41|t",
+}
+local icon_favorite = icons.friend;
+local icon_unfavorite = icons.bnetfriend;
+
 local iLevelListDrop = {
-    [1] = 184,
-    [2] = 187,
-    [3] = 190,
-    [4] = 194,
-    [5] = 194,
-    [6] = 197,
-    [7] = 200,
-    [8] = 200,
-    [9] = 200,
-    [10] = 203,
-    [11] = 203,
-    [12] = 207,
-    [13] = 207,
-    [14] = 207,
-    [15] = 210
+	[1] = 210,
+	[2] = 210,
+	[3] = 213,
+	[4] = 216,
+	[5] = 220,
+	[6] = 223,
+	[7] = 223,
+	[8] = 226,
+	[9] = 226,
+	[10] = 229,
+	[11] = 229,
+	[12] = 233,
+	[13] = 233,
+	[14] = 236,
+	[15] = 236
 }
 
 local iLevelListChest = {
-    [1] = 184,
-    [2] = 200,
-    [3] = 203,
-    [4] = 207,
-    [5] = 210,
-    [6] = 210,
-    [7] = 213,
-    [8] = 216,
-    [9] = 216,
-    [10] = 220,
-    [11] = 220,
-    [12] = 223,
-    [13] = 223,
-    [14] = 226,
-    [15] = 226
+	[1] = 210,
+	[2] = 223,
+	[3] = 226,
+	[4] = 229,
+	[5] = 233,
+	[6] = 236,
+	[7] = 236,
+	[8] = 239,
+	[9] = 239,
+	[10] = 242,
+	[11] = 242,
+	[12] = 246,
+	[13] = 246,
+	[14] = 249,
+	[15] = 252
+}
+
+local iLevelListValor = {
+	[1] = 210,
+	[2] = 213,
+	[3] = 216,
+	[4] = 220,
+	[5] = 223,
+	[6] = 226,
+	[7] = 229,
+	[8] = 233,
+	[9] = 236,
+	[10] = 239,
+	[11] = 242,
+	[12] = 246
 }
 
 local armorTypes = {
@@ -135,44 +240,46 @@ local armorTypes = {
 
 local gearSlots = {
 	[1] = L["Head"],
-    [2] = L["Neck"],
-    [3] = L["Shoulder"],
-    [4] = L["Back"],
-    [5] = L["Chest"],
-    [6] = L["Wrist"],
-    [7] = L["Hands"],
-    [8] = L["Waist"],
-    [9] = L["Legs"],
-    [10] = L["Feet"],
-    [11] = L["Finger"],
-    [12] = L["Trinket"],
+	[2] = L["Neck"],
+	[3] = L["Shoulder"],
+	[4] = L["Back"],
+	[5] = L["Chest"],
+	[6] = L["Wrist"],
+	[7] = L["Hands"],
+	[8] = L["Waist"],
+	[9] = L["Legs"],
+	[10] = L["Feet"],
+	[11] = L["Finger"],
+	[12] = L["Trinket"],
 	[13] = L["One-Hand"],
 	[14] = L["Off-Hand"],
 	[15] = L["Two-Hand"],
 	[16] = L["Ranged"],
+	[17] = L["Favorites"],
 }
 
 local mythicLevels = {
 	[1] = "0",
-    [2] = "+2",
-    [3] = "+3",
-    [4] = "+4",
-    [5] = "+5",
-    [6] = "+6",
-    [7] = "+7",
-    [8] = "+8",
-    [9] = "+9",
-    [10] = "+10",
-    [11] = "+11",
-    [12] = "+12",
+	[2] = "+2",
+	[3] = "+3",
+	[4] = "+4",
+	[5] = "+5",
+	[6] = "+6",
+	[7] = "+7",
+	[8] = "+8",
+	[9] = "+9",
+	[10] = "+10",
+	[11] = "+11",
+	[12] = "+12",
 	[13] = "+13",
-    [14] = "+14",
-    [15] = "+15",
+	[14] = "+14",
+	[15] = "+15",
 }
 
 local sourceList = {
 	[1] = L["Dungeon Drop"],
-    [2] = L["Weekly Vault"],
+	[2] = L["Weekly Vault"],
+	[3] = L["Valor Upgrade"],
 }
 
 local dungeonList = {
@@ -417,7 +524,7 @@ function MyDropDownMenu_OnLoad()
    info.text = "This is an option in the menu.";
    info.value = "OptionVariable";
    info.func = FunctionCalledWhenOptionIsClicked
-			 -- can also be done as function() FunctionCalledWhenOptionIsClicked() end;
+   -- can also be done as function() FunctionCalledWhenOptionIsClicked() end;
    -- Add the above information to the options menu as a button.
    UIDropDownMenu_AddButton(info);
 end
@@ -464,12 +571,196 @@ function indexTable(inputTable)
 	return index
 end
 
+function tcontains(table, item)
+	local index = 1;
+	while table[index] do
+		if ( item == table[index] ) then
+			return 1;
+		end
+		index = index + 1;
+	end
+	return nil;
+end
+
 local framepool = {};
+local favframepool = {};
+local tmpFavItems = {};
 function clearFrames()
 	if itemsInitialized then
+		-- FIXME: memory leak?
 		for k,v in pairs(framepool) do
 			v:Hide();
 		end
+		for k,v in pairs(favframepool) do
+			v:Hide();
+		end
+		tmpFavItems = {};
+	end
+end
+
+function sendItemLink(itemLink)
+	local chatEditBox = ChatEdit_ChooseBoxForSend()
+	if not chatEditBox:IsShown() then
+		ChatEdit_ActivateChat(chatEditBox)
+	end
+	chatEditBox:Insert(itemLink)
+	--chatEditBox:HighlightText()
+end
+
+function getNextRole(role)
+	if role == "ALL" then
+		return "DAMAGER";
+	elseif role == "DAMAGER" then
+		return "TANK";
+	elseif role == "TANK" then
+		return "HEALER";
+	else
+		return "ALL";
+	end
+end
+
+function getRoleIcon(role)
+	if role == "ALL" then
+		return "";
+	else
+		return icons[role];
+	end
+end
+
+function undoFavItem(f, itemFrame, itemID, itemLevel)
+	f.ico.prefix = icon_unfavorite;
+	f.ico:SetText(f.ico.prefix .. f.ico.suffix);
+	itemFrame.ico.prefix = icon_unfavorite;
+	itemFrame.ico:SetText(itemFrame.ico.prefix .. itemFrame.ico.suffix);
+
+	db.profile.favoriteItems[itemID] = nil;
+	itemFrame.favorite = false;
+end
+
+function redoFavItem(f, itemFrame, itemID, itemLevel)
+	f.ico.prefix = icon_favorite;
+	f.ico:SetText(f.ico.prefix .. f.ico.suffix);
+	itemFrame.ico.prefix = icon_favorite;
+	itemFrame.ico:SetText(itemFrame.ico.prefix .. itemFrame.ico.suffix);
+
+	db.profile.favoriteItems[itemID] = itemFrame.role;
+	itemFrame.favorite = true;
+end
+
+function changeFavRole(f, itemFrame, itemID, itemLevel)
+	local role = getNextRole(itemFrame.role);
+	local roleIcon = getRoleIcon(role);
+	if not itemFrame.favorite then
+		f.ico.prefix = icon_favorite;
+		itemFrame.ico.prefix = icon_favorite;
+	end
+	f.ico.suffix = roleIcon;
+	f.ico:SetText(f.ico.prefix .. f.ico.suffix);
+	itemFrame.ico.suffix = roleIcon;
+	itemFrame.ico:SetText(itemFrame.ico.prefix .. itemFrame.ico.suffix);
+	itemFrame.role = role;
+
+	db.profile.favoriteItems[itemID] = role;
+	itemFrame.favorite = true;
+end
+
+function createFavItem(frame, itemFrame, itemID, itemLevel)
+	local xStart = sizex + 10;
+	local xItemStart, yItemStart, yItemOffset, xItemSecondColumn = xStart, -120, -220, 325;
+	local tmpFavCount = 0;
+	local role = itemFrame.role;
+
+	if tmpFavItems[itemID] ~= nil then
+		-- already added
+		if itemFrame.favorite then
+			undoFavItem(itemFrame.fav, itemFrame, itemID, itemLevel);
+		else
+			redoFavItem(itemFrame.fav, itemFrame, itemID, itemLevel);
+		end
+		return
+	end
+	tmpFavItems[itemID] = true;
+	for _ in pairs(tmpFavItems) do
+		tmpFavCount = tmpFavCount + 1;
+	end
+
+	if tmpFavCount == 1 then
+		local justifyH = "RIGHT";
+		local offsetX = xStart;
+		local offsetY = yStart;
+
+		local favoriteString = frame.CreateFontString(frame, "OVERLAY", "GameTooltipText");
+		favoriteString:SetFontObject("GameFontNormalLarge");
+		favoriteString:SetJustifyH(justifyH);
+		--favoriteString:SetJustifyV("CENTER");
+		favoriteString:SetPoint("TOPLEFT", frame, "TOPLEFT", offsetX, offsetY);
+		favoriteString:SetTextColor(1, 1, 1, 1);
+		favoriteString:SetText(L["Favorites"] .. ":");
+		tinsert(favframepool, favoriteString);
+	end
+
+	local k = itemID;
+	local xSize, ySize = 32, 32;
+	if true then
+		local itemIcon = GetItemIcon(k);
+		local f = CreateFrame("Frame", "MPLFavItemIcon"..k, frame, BackdropTemplateMixin and "BackdropTemplate");
+		tinsert(favframepool, f);
+		f:SetSize(xSize, ySize);
+
+		local x = xItemStart + xSize/4 + (tmpFavCount - 1)*xSize*1.5;
+		local y = yItemStart - ySize + ySize/4;
+		if true then
+			f:SetPoint("TOPLEFT", frame, "TOPLEFT", x, y);
+			f.tex = f:CreateTexture();
+			f.tex:SetAllPoints(f);
+			f.tex:SetTexture(itemIcon);
+			f.ico = f:CreateFontString(f, "OVERLAY", "GameTooltipText")
+			f.ico:SetPoint("BOTTOMLEFT", f, "TOPLEFT", 0, 0)
+			if itemFrame.favorite then
+				f.ico.prefix = icon_unfavorite;
+				itemFrame.ico.prefix = icon_unfavorite;
+			else
+				f.ico.prefix = icon_favorite;
+				itemFrame.ico.prefix = icon_favorite;
+			end
+			f.ico.suffix = getRoleIcon(role);
+			f.ico:SetText(f.ico.prefix .. f.ico.suffix);
+			itemFrame.ico:SetText(itemFrame.ico.prefix .. itemFrame.ico.suffix);
+			itemFrame.fav = f;
+			f:SetScript("OnEnter",
+			function()
+				GameTooltip:SetOwner(f, "ANCHOR_BOTTOMRIGHT",f:GetWidth(),f:GetHeight());
+				GameTooltip:SetHyperlink("item:"..k.."..::::::::::::2:6807:"..itemLevel);
+				GameTooltip:Show();
+			end
+			);
+			f:SetScript("OnLeave",
+			function()
+				GameTooltip:Hide();
+			end
+			);
+			f:SetScript("OnMouseDown",
+			function(self, button)
+				local shift_key = IsShiftKeyDown()
+				if button == "LeftButton" then
+					if shift_key then
+						itemName, itemLink, itemQuality, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, sellPrice, classID, subclassID, bindType, expacID, setID, isCraftingReagent = GetItemInfo("item:"..k.."..::::::::::::2:6807:"..itemLevel)
+						sendItemLink(itemLink)
+					end
+				elseif button == "RightButton" then
+					changeFavRole(self, itemFrame, k, itemLevel);
+				end
+			end
+			);
+		end
+	end
+
+	if not itemFrame.favorite then
+		db.profile.favoriteItems[itemID] = role;
+		itemFrame.favorite = true;
+	else
+		db.profile.favoriteItems[itemID] = nil;
+		itemFrame.favorite = false;
 	end
 end
 
@@ -495,11 +786,21 @@ function createItems(frame, armorSelection, itemSlot, dungeonLevel, itemSource)
 	local armorIndex = getIndex(armorTypes, armorSelection);
 	local dungeonIndex = indexTable(dungeonList);
 
+	local favoriteMode = (itemIndex == 17) and true or false;
 	-- get items
 	local itemList = {};
-	for k,v in pairs(dungeonItems) do
-		if v[1] == itemIndex and (v[2] == armorIndex or v[2] == 5) then
-			itemList[k] = v;
+	if not favoriteMode then
+		for k,v in pairs(dungeonItems) do
+			if v[1] == itemIndex and (v[2] == armorIndex or v[2] == 5) then
+				itemList[k] = v;
+			end
+		end
+	else
+		for k,v in pairs(db.profile.favoriteItems) do
+			dv = dungeonItems[k];
+			if (dv[2] == armorIndex or dv[2] == 5) then
+				itemList[k] = dv;
+			end
 		end
 	end
 
@@ -507,6 +808,11 @@ function createItems(frame, armorSelection, itemSlot, dungeonLevel, itemSource)
 	local itemLevel;
 	if itemSource == L["Weekly Vault"] and dungeonLevel ~= 0 then
 		itemLevel = iLevelListChest[dungeonLevel];
+	elseif itemSource == L["Valor Upgrade"] and dungeonLevel ~= 0 then
+		if dungeonLevel > 12 then
+			dungeonLevel = 12;
+		end
+		itemLevel = iLevelListValor[dungeonLevel];
 	elseif dungeonLevel ~= 0 then
 		itemLevel = iLevelListDrop[dungeonLevel];
 	else
@@ -521,67 +827,66 @@ function createItems(frame, armorSelection, itemSlot, dungeonLevel, itemSource)
 		tinsert(framepool, f);
 		f:SetSize(xSize, ySize);
 
+		local x, y;
 		if v[3]<5 then
 			if v[3] == lastDungeon then
 				i = i+1;
 			else
 				i = 0;
 			end
-			f:SetPoint("TOPLEFT", frame, "TOPLEFT", xItemStart+xSize/4+dungeonCount[v[3]]*xSize*1.5, yItemStart+(v[3]-1)*yItemOffset/2-ySize+ySize/4);
-			f.tex = f:CreateTexture();
-			f.tex:SetAllPoints(f);
-			f.tex:SetTexture(itemIcon);
-			f:SetScript("OnEnter",
-				function()
-					GameTooltip:SetOwner(f, "ANCHOR_BOTTOMRIGHT",f:GetWidth(),f:GetHeight());
-					GameTooltip:SetHyperlink("item:"..k.."..::::::::::::2:6807:"..itemLevel);
-					GameTooltip:Show();
-				end
-			);
-			f:SetScript("OnLeave",
-				function()
-					GameTooltip:Hide();
-				end
-			);
-			f:SetScript("OnMouseDown",
-				function(self, button)
-					local shift_key = IsShiftKeyDown()
-					if button == "LeftButton" then
-						if shift_key then
-							itemName, itemLink, itemQuality, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, sellPrice, classID, subclassID, bindType, expacID, setID, isCraftingReagent = GetItemInfo("item:"..k.."..::::::::::::2:6807:"..itemLevel)
-							SendChatMessage(itemLink)
-						end
-					end
-				end
-			);
+			x = xItemStart+xSize/4+dungeonCount[v[3]]*xSize*1.5;
+			y = yItemStart+(v[3]-1)*yItemOffset/2-ySize+ySize/4;
 			-- Second column
 		else
-			f:SetPoint("TOPLEFT", frame, "TOPLEFT", xItemStart+xSecondColumn+xSize/4+dungeonCount[v[3]]*xSize*1.5, yItemStart+(v[3]-5)*yItemOffset/2-ySize+ySize/4);
+			x = xItemStart+xSecondColumn+xSize/4+dungeonCount[v[3]]*xSize*1.5;
+			y = yItemStart+(v[3]-5)*yItemOffset/2-ySize+ySize/4;
+		end
+		if true then
+			f:SetPoint("TOPLEFT", frame, "TOPLEFT", x, y);
 			f.tex = f:CreateTexture();
 			f.tex:SetAllPoints(f);
 			f.tex:SetTexture(itemIcon);
+			f.ico = f:CreateFontString(f, "OVERLAY", "GameTooltipText")
+			f.ico:SetPoint("BOTTOMLEFT", f, "TOPLEFT", 0, 0)
+			f.ico.prefix = "";
+			f.ico.suffix = "";
+			local isInFavorites = (db.profile.favoriteItems[k] ~= nil);
+			if isInFavorites then
+				f.role = db.profile.favoriteItems[k];
+			else
+				f.role = "ALL";
+			end
+			if not favoriteMode and isInFavorites then
+				f.ico.prefix = icon_favorite;
+			end
+			f.ico.suffix = getRoleIcon(f.role);
+			f.ico:SetText(f.ico.prefix .. f.ico.suffix);
+			f.favorite = (favoriteMode or isInFavorites) and true or false;
+			f.favoriteMode = favoriteMode;
 			f:SetScript("OnEnter",
-				function()
-					GameTooltip:SetOwner(f, "ANCHOR_BOTTOMRIGHT",f:GetWidth(),f:GetHeight());
-					GameTooltip:SetHyperlink("item:"..k.."..::::::::::::2:6807:"..itemLevel);
-					GameTooltip:Show();
-				end
+			function()
+				GameTooltip:SetOwner(f, "ANCHOR_BOTTOMRIGHT",f:GetWidth(),f:GetHeight());
+				GameTooltip:SetHyperlink("item:"..k.."..::::::::::::2:6807:"..itemLevel);
+				GameTooltip:Show();
+			end
 			);
 			f:SetScript("OnLeave",
-				function()
-					GameTooltip:Hide();
-				end
+			function()
+				GameTooltip:Hide();
+			end
 			);
 			f:SetScript("OnMouseDown",
-				function(self, button)
-					local shift_key = IsShiftKeyDown()
-					if button == "LeftButton" then
-						if shift_key then
-							itemName, itemLink, itemQuality, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, sellPrice, classID, subclassID, bindType, expacID, setID, isCraftingReagent = GetItemInfo("item:"..k.."..::::::::::::2:6807:"..itemLevel)
-							SendChatMessage(itemLink)
-						end
+			function(self, button)
+				local shift_key = IsShiftKeyDown()
+				if button == "LeftButton" then
+					if shift_key then
+						itemName, itemLink, itemQuality, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, sellPrice, classID, subclassID, bindType, expacID, setID, isCraftingReagent = GetItemInfo("item:"..k.."..::::::::::::2:6807:"..itemLevel)
+						sendItemLink(itemLink)
 					end
+				elseif button == "RightButton" then
+					createFavItem(frame, f, k, itemLevel);
 				end
+			end
 			);
 		end
 		dungeonCount[v[3]] = dungeonCount[v[3]]+1
@@ -590,7 +895,7 @@ function createItems(frame, armorSelection, itemSlot, dungeonLevel, itemSource)
 	itemsInitialized = true;
 end
 
-local armorText, slotText, mythicText, sourceText;
+local armorText, slotText, mythicValue, mythicLevel, mythicText, sourceText;
 MPL.BackdropColor = { 0.058823399245739, 0.058823399245739, 0.058823399245739, 0.9}
 
 function closeMainFrame()
@@ -612,6 +917,7 @@ function initFrames()
 		frame:SetPoint("CENTER");
 		frame:SetWidth(sizex);
 		frame:SetHeight(sizey);
+		frame:SetFrameStrata("HIGH");
 
 		local tex = frame:CreateTexture(nil, "BACKGROUND");
 		tex:SetAllPoints();
@@ -632,7 +938,7 @@ function initFrames()
 		local dropDownWidth = 125;
 		-- Armor type drop down
 		--armorText = armorTypes[classArmors[classID][2]];
-		armorText = L["Armor Type"];
+		armorText = (db.profile.armorType > 0) and armorTypes[db.profile.armorType] or L["Armor Type"];
 		local armorDropDown = CreateFrame("Frame", "MPLArmorDropDown", frame, "UIDropDownMenuTemplate");
 		armorDropDown:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -10);
 		UIDropDownMenu_SetWidth(armorDropDown, dropDownWidth);
@@ -653,14 +959,18 @@ function initFrames()
 				end
 			end
 		);
+		if armorText ~= L["Armor Type"] then
+			UIDropDownMenu_SetSelectedValue(armorDropDown, armorText);
+		end
 		-- Implement the function to change the value
 		function armorDropDown:SetValue(newValue)
+			db.profile.armorType = getIndex(armorTypes, newValue);
 			armorText = newValue;
 			UIDropDownMenu_SetSelectedValue(armorDropDown, armorText);
 			if armorText ~= L["Armor Type"] and slotText ~= L["Item Slot"] and mythicText ~= L["Mythic Level"] then
-				createItems(frame, armorText, slotText, tonumber(mythicText), sourceText);
+				createItems(frame, armorText, slotText, mythicLevel, sourceText);
 			elseif armorText == L["Armor Type"] and (slotText == L["Neck"] or slotText == L["Back"] or slotText == L["Finger"] or slotText == L["Trinket"] or slotText == L["One-Hand"] or slotText == L["Off-Hand"] or slotText == L["Two-Hand"] or slotText == L["Ranged"]) and mythicText ~= L["Mythic Level"] then
-				createItems(frame, L["Cloth"], slotText, tonumber(mythicText), sourceText);
+				createItems(frame, L["Cloth"], slotText, mythicLevel, sourceText);
 			else
 				clearFrames();
 			end
@@ -668,7 +978,7 @@ function initFrames()
 		end
 
 		-- slot drop down
-		slotText = L["Item Slot"]
+		slotText = (db.profile.slot > 0) and gearSlots[db.profile.slot] or L["Item Slot"];
 		local slotDropDown = CreateFrame("Frame", "MPLSlotDropDown", frame, "UIDropDownMenuTemplate");
 		slotDropDown:SetPoint("TOPLEFT", frame, "TOPLEFT", 150, -10);
 		UIDropDownMenu_SetWidth(slotDropDown, dropDownWidth);
@@ -676,11 +986,24 @@ function initFrames()
 		UIDropDownMenu_SetText(slotDropDown, slotText);
 		UIDropDownMenu_Initialize(slotDropDown,
 			function(self, level, menuList)
+				-- favorite
 				local info = UIDropDownMenu_CreateInfo();
+				info.func = self.SetValue;
+				if true then
+					info.text = L["Favorites"];
+					info.menuList = 1;
+					info.hasArrow = false;
+					info.value = L["Favorites"];
+					info.arg1 = L["Favorites"];
+					info.checked = false;
+					UIDropDownMenu_AddButton(info);
+				end
+				-- gearSlots
+				info = UIDropDownMenu_CreateInfo();
 				info.func = self.SetValue;
 				for i=1,16 do
 					info.text = gearSlots[i];
-					info.menuList = i;
+					info.menuList = 1 + i;
 					info.hasArrow = false;
 					info.value = gearSlots[i];
 					info.arg1 = gearSlots[i];
@@ -689,14 +1012,18 @@ function initFrames()
 				end
 			end
 		);
+		if slotText ~= L["Item Slot"] then
+			UIDropDownMenu_SetSelectedValue(slotDropDown, slotText);
+		end
 		-- Implement the function to change the value
 		function slotDropDown:SetValue(newValue)
+			db.profile.slot = getIndex(gearSlots, newValue);
 			slotText = newValue;
 			UIDropDownMenu_SetSelectedValue(slotDropDown, slotText);
 			if armorText ~= L["Armor Type"] and slotText ~= L["Item Slot"] and mythicText ~= L["Mythic Level"] then
-				createItems(frame, armorText, slotText, tonumber(mythicText), sourceText);
+				createItems(frame, armorText, slotText, mythicLevel, sourceText);
 			elseif armorText == L["Armor Type"] and (slotText == L["Neck"] or slotText == L["Back"] or slotText == L["Finger"] or slotText == L["Trinket"] or slotText == L["One-Hand"] or slotText == L["Off-Hand"] or slotText == L["Two-Hand"] or slotText == L["Ranged"]) and mythicText ~= L["Mythic Level"] then
-				createItems(frame, L["Cloth"], slotText, tonumber(mythicText), sourceText);
+				createItems(frame, L["Cloth"], slotText, mythicLevel, sourceText);
 			else
 				clearFrames();
 			end
@@ -704,35 +1031,56 @@ function initFrames()
 		end
 
 		-- mythic level drop down
-		mythicText = L["Mythic Level"]
+		mythicValue = (db.profile.mythicLevel > 0) and mythicLevels[db.profile.mythicLevel] or L["Mythic Level"];
+		mythicLevel = db.profile.mythicLevel;
 		local mythicDropDown = CreateFrame("Frame", "MPLMythicDropDown", frame, "UIDropDownMenuTemplate");
 		mythicDropDown:SetPoint("TOPLEFT", frame, "TOPLEFT", 300, -10);
 		UIDropDownMenu_SetWidth(mythicDropDown, dropDownWidth);
 		UIDropDownMenu_Initialize(mythicDropDown, MPLMythicDropDown_Menu);
-		UIDropDownMenu_SetText(mythicDropDown, mythicText);
-		UIDropDownMenu_Initialize(mythicDropDown,
-			function(self, level, menuList)
-				local info = UIDropDownMenu_CreateInfo();
-				info.func = self.SetValue;
-				for i=1,15 do
-					info.text = mythicLevels[i];
-					info.menuList = i;
-					info.hasArrow = false;
-					info.value = mythicLevels[i];
-					info.arg1 = mythicLevels[i];
-					info.checked = false;
-					UIDropDownMenu_AddButton(info);
+		local setMythicDropDownButtons = function()
+			UIDropDownMenu_Initialize(mythicDropDown,
+				function(self, level, menuList)
+					local info = UIDropDownMenu_CreateInfo();
+					info.func = self.SetValue;
+					for i=1,15 do
+						if sourceText ~= L["Valor Upgrade"] then
+							info.text = mythicLevels[i];
+						else
+							info.text = (i < 12) and tostring(i) or "12";
+						end
+						info.menuList = i;
+						info.hasArrow = false;
+						info.value = mythicLevels[i];
+						info.arg1 = mythicLevels[i];
+						info.checked = false;
+						UIDropDownMenu_AddButton(info);
+					end
 				end
+			);
+		end
+		local setMythicDropDownText = function(setValue)
+			if mythicValue ~= L["Mythic Level"] then
+				if sourceText ~= L["Valor Upgrade"] then
+					mythicText = mythicValue;
+				else
+					mythicText = (db.profile.mythicLevel < 12) and tostring(db.profile.mythicLevel) or "12";
+				end
+				if setValue then
+					UIDropDownMenu_SetSelectedValue(mythicDropDown, mythicValue);
+				end
+				UIDropDownMenu_SetText(mythicDropDown, mythicText);
 			end
-		);
+		end
 		-- Implement the function to change the value
 		function mythicDropDown:SetValue(newValue)
-			mythicText = newValue;
-			UIDropDownMenu_SetSelectedValue(mythicDropDown, mythicText);
+			db.profile.mythicLevel = getIndex(mythicLevels, newValue);
+			mythicValue = newValue;
+			mythicLevel = db.profile.mythicLevel;
+			setMythicDropDownText(true);
 			if armorText ~= L["Armor Type"] and slotText ~= L["Item Slot"] and mythicText ~= L["Mythic Level"] then
-				createItems(frame, armorText, slotText, tonumber(mythicText), sourceText);
+				createItems(frame, armorText, slotText, mythicLevel, sourceText);
 			elseif armorText == L["Armor Type"] and (slotText == L["Neck"] or slotText == L["Back"] or slotText == L["Finger"] or slotText == L["Trinket"] or slotText == L["One-Hand"] or slotText == L["Off-Hand"] or slotText == L["Two-Hand"] or slotText == L["Ranged"]) and mythicText ~= L["Mythic Level"] then
-				createItems(frame, L["Cloth"], slotText, tonumber(mythicText), sourceText);
+				createItems(frame, L["Cloth"], slotText, mythicLevel, sourceText);
 			else
 				clearFrames();
 			end
@@ -740,7 +1088,9 @@ function initFrames()
 		end
 
 		-- dungeon or chest drop down
-		sourceText = L["Source"];
+		sourceText = (db.profile.source > 0) and sourceList[db.profile.source] or L["Source"];
+		setMythicDropDownButtons();
+		setMythicDropDownText(true);
 		local sourceDropDown = CreateFrame("Frame", "MPLSourceDropDown", frame, "UIDropDownMenuTemplate");
 		sourceDropDown:SetPoint("TOPLEFT", frame, "TOPLEFT", 450, -10);
 		UIDropDownMenu_SetWidth(sourceDropDown, dropDownWidth);
@@ -750,7 +1100,7 @@ function initFrames()
 			function(self, level, menuList)
 				local info = UIDropDownMenu_CreateInfo();
 				info.func = self.SetValue;
-				for i=1,2 do
+				for i=1,3 do
 					info.text = sourceList[i];
 					info.menuList = i;
 					info.hasArrow = false;
@@ -761,14 +1111,84 @@ function initFrames()
 				end
 			end
 		);
+		if sourceText ~= L["Source"] then
+			UIDropDownMenu_SetSelectedValue(sourceDropDown, sourceText);
+		end
 		-- Implement the function to change the value
 		function sourceDropDown:SetValue(newValue)
+			db.profile.source = getIndex(sourceList, newValue);
 			sourceText = newValue;
 			UIDropDownMenu_SetSelectedValue(sourceDropDown, sourceText);
+			setMythicDropDownButtons();
+			setMythicDropDownText(false);
 			if armorText ~= L["Armor Type"] and slotText ~= L["Item Slot"] and mythicText ~= L["Mythic Level"] then
-				createItems(frame, armorText, slotText, tonumber(mythicText), sourceText);
+				createItems(frame, armorText, slotText, mythicLevel, sourceText);
 			elseif armorText == L["Armor Type"] and (slotText == L["Neck"] or slotText == L["Back"] or slotText == L["Finger"] or slotText == L["Trinket"] or slotText == L["One-Hand"] or slotText == L["Off-Hand"] or slotText == L["Two-Hand"] or slotText == L["Ranged"]) and mythicText ~= L["Mythic Level"] then
-				createItems(frame, L["Cloth"], slotText, tonumber(mythicText), sourceText);
+				createItems(frame, L["Cloth"], slotText, mythicLevel, sourceText);
+			else
+				clearFrames();
+			end
+			CloseDropDownMenus();
+		end
+
+		-- profile drop down
+		profileText = db:GetCurrentProfile();
+		local profileDropDown = CreateFrame("Frame", "MPLProfileDropDown", frame, "UIDropDownMenuTemplate");
+		profileDropDown:SetPoint("TOPLEFT", frame, "TOPLEFT", 450, -50);
+		UIDropDownMenu_SetWidth(profileDropDown, dropDownWidth);
+		UIDropDownMenu_Initialize(profileDropDown, MPLProfileDropDown_Menu);
+		UIDropDownMenu_SetText(profileDropDown, profileText);
+		UIDropDownMenu_Initialize(profileDropDown,
+			function(self, level, menuList)
+				local info = UIDropDownMenu_CreateInfo();
+				info.func = self.SetValue;
+				for i,profile in pairs(db:GetProfiles()) do
+					info.text = profile;
+					info.menuList = i;
+					info.hasArrow = false;
+					info.value = profile;
+					info.arg1 = profile;
+					info.checked = false;
+					UIDropDownMenu_AddButton(info);
+				end
+			end
+		);
+		UIDropDownMenu_SetSelectedValue(profileDropDown, profileText);
+		-- Implement the function to change the value
+		function profileDropDown:SetValue(newValue)
+			if not tcontains(db:GetProfiles(), newValue) then
+				DEFAULT_CHAT_MESSAGE:AddMessage((L["The profile %s doesn't exist"]):format(newValue));
+				return
+			end
+			currentProfileKey = newValue;
+			db:SetProfile(newValue);
+
+			profileText = newValue;
+			UIDropDownMenu_SetSelectedValue(profileDropDown, profileText);
+
+			armorText = (db.profile.armorType > 0) and armorTypes[db.profile.armorType] or L["Armor Type"];
+			slotText = (db.profile.slot > 0) and gearSlots[db.profile.slot] or L["Item Slot"];
+			mythicValue = (db.profile.mythicLevel > 0) and mythicLevels[db.profile.mythicLevel] or L["Mythic Level"];
+			mythicLevel = db.profile.mythicLevel;
+			sourceText = (db.profile.source > 0) and sourceList[db.profile.source] or L["Source"];
+			if armorText ~= L["Armor Type"] then
+				UIDropDownMenu_SetSelectedValue(armorDropDown, armorText);
+				UIDropDownMenu_SetText(armorDropDown, armorText);
+			end
+			if slotText ~= L["Item Slot"] then
+				UIDropDownMenu_SetSelectedValue(slotDropDown, slotText);
+				UIDropDownMenu_SetText(slotDropDown, slotText);
+			end
+			setMythicDropDownText(true);
+			if sourceText ~= L["Source"] then
+				UIDropDownMenu_SetSelectedValue(sourceDropDown, sourceText);
+				UIDropDownMenu_SetText(sourceDropDown, sourceText);
+			end
+
+			if armorText ~= L["Armor Type"] and slotText ~= L["Item Slot"] and mythicText ~= L["Mythic Level"] then
+				createItems(frame, armorText, slotText, mythicLevel, sourceText);
+			elseif armorText == L["Armor Type"] and (slotText == L["Neck"] or slotText == L["Back"] or slotText == L["Finger"] or slotText == L["Trinket"] or slotText == L["One-Hand"] or slotText == L["Off-Hand"] or slotText == L["Two-Hand"] or slotText == L["Ranged"]) and mythicText ~= L["Mythic Level"] then
+				createItems(frame, L["Cloth"], slotText, mythicLevel, sourceText);
 			else
 				clearFrames();
 			end
@@ -780,7 +1200,7 @@ function initFrames()
 
 		-- Item icons
 		if mythicText ~= L["Mythic Level"] then
-			createItems(frame, 15);
+			createItems(frame, armorText, slotText, mythicLevel, sourceText);
 		end
 		framesInitialized = true;
 	end

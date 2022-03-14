@@ -80,5 +80,5 @@ L["Great Vault M+14"] = "Great Vault M+14"
 L["Great Vault M+15"] = "Great Vault M+15"
 
 -- Other
-L["Right click on items to favorite\nRight click on favorite items to add a role"] = "아이템 오른클릭으로 즐겨찾기에 추가\n즐겨찾기 아이템 오른클릭으로 role 추가"
+L["Right click on items to favorite"] = "아이템 오른클릭으로 즐겨찾기에 추가"
 L["The profile %s doesn't exist"] = "%s의 프로파일 없음"

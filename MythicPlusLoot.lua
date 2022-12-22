@@ -26,6 +26,10 @@ local dungeonIDs = MPL_tables.dungeon_ids();
 local icons = {
 	friend     = ("|TInterface\\AddOns\\%s\\textures\\friend:14:14:0:0:32:32:1:30:2:30|t"):format(AddonName),
 	bnetfriend = "|TInterface\\ChatFrame\\UI-ChatIcon-BattleNet:14:14:0:0:32:32:1:30:2:30|t",
+	TANK       = "|TInterface\\LFGFrame\\UI-LFG-ICON-PORTRAITROLES:14:14:0:0:64:64:0:19:22:41|t",
+	HEALER     = "|TInterface\\LFGFrame\\UI-LFG-ICON-PORTRAITROLES:14:14:0:0:64:64:20:39:1:20|t",
+	DAMAGER    = "|TInterface\\LFGFrame\\UI-LFG-ICON-PORTRAITROLES:14:14:0:0:64:64:20:39:22:41|t",
+	STAR       = "|TInterface\\TargetingFrame\\UI-RaidTargetingIcon_1:0|t",
 }
 local icon_favorite = icons.friend;
 local icon_unfavorite = icons.bnetfriend;
@@ -264,8 +268,30 @@ function sendItemLink(itemLink)
 	--chatEditBox:HighlightText()
 end
 
-function getRoleIcon(role)
+function getNextRole(role, rotate)
 	if role == "ALL" then
+		return "DAMAGER";
+	elseif role == "DAMAGER" then
+		return "TANK";
+	elseif role == "TANK" then
+		return "HEALER";
+	elseif role == "HEALER" then
+		return "STAR";
+	else
+		if rotate then
+			if role ~= "" then
+				return "";
+			else
+				return "ALL";
+			end
+		else
+			return "ALL";
+		end
+	end
+end
+
+function getRoleIcon(role)
+	if role == "ALL" or role == "" then
 		return "";
 	else
 		return icons[role];
@@ -292,19 +318,54 @@ function redoFavItem(f, itemFrame, itemID)
 	itemFrame.favorite = true;
 end
 
-function createFavItem(frame, itemFrame, itemID)
-	local xStart = sizex + 10;
-	local xItemStart, yItemStart, yItemOffset, xItemSecondColumn = xStart, -120, -220, 325;
+function toggleFavItem(f, itemFrame, itemID, itemLevel)
+	-- already added
+	if itemFrame.favorite then
+		undoFavItem(f, itemFrame, itemID, itemLevel);
+	else
+		redoFavItem(f, itemFrame, itemID, itemLevel);
+	end
+end
+
+function changeFavRole(f, itemFrame, itemID, itemLevel)
+	local role = getNextRole(itemFrame.role, false);
+	local roleIcon = getRoleIcon(role);
+	if not itemFrame.favorite then
+		f.ico.prefix = icon_favorite;
+		itemFrame.ico.prefix = icon_favorite;
+	end
+	f.ico.suffix = roleIcon;
+	f.ico:SetText(f.ico.prefix .. f.ico.suffix);
+	itemFrame.ico.suffix = roleIcon;
+	itemFrame.ico:SetText(itemFrame.ico.prefix .. itemFrame.ico.suffix);
+	itemFrame.role = role;
+
+	db.profile.favoriteItems[itemID] = role;
+	itemFrame.favorite = true;
+end
+
+function rotateFavorite(f, itemFrame, itemID, itemLevel)
+	local role = getNextRole(itemFrame.role, true);
+	if role == "" then
+		local roleIcon = getRoleIcon(role);
+		f.ico.suffix = roleIcon;
+		f.ico:SetText(f.ico.prefix .. f.ico.suffix);
+		itemFrame.ico.suffix = roleIcon;
+		itemFrame.ico:SetText(itemFrame.ico.prefix .. itemFrame.ico.suffix);
+		itemFrame.role = "";
+		undoFavItem(f, itemFrame, itemID, itemLevel);
+	else
+		changeFavRole(f, itemFrame, itemID, itemLevel);
+	end
+end
+
+function createFavItem(frame, itemFrame, itemID, itemLevel)
+	local xItemStart, yItemStart = xSecondColumn + 75, -30;
 	local tmpFavCount = 0;
 	local role = itemFrame.role;
 
 	if tmpFavItems[itemID] ~= nil then
-		-- already added
-		if itemFrame.favorite then
-			undoFavItem(itemFrame.fav, itemFrame, itemID);
-		else
-			redoFavItem(itemFrame.fav, itemFrame, itemID);
-		end
+		rotateFavorite(itemFrame.fav, itemFrame, itemID, itemLevel);
 		return
 	end
 	tmpFavItems[itemID] = true;
@@ -314,14 +375,16 @@ function createFavItem(frame, itemFrame, itemID)
 
 	if tmpFavCount == 1 then
 		local justifyH = "RIGHT";
-		local offsetX = xStart;
-		local offsetY = yStart;
+		local offsetX = xItemStart - 60;
+		local offsetY = yItemStart - 20;
 
 		local favoriteString = frame.CreateFontString(frame, "OVERLAY");
 		favoriteString:SetFontObject("GameFontNormalLarge");
 		favoriteString:SetJustifyH(justifyH);
 		favoriteString:SetPoint("TOPLEFT", frame, "TOPLEFT", offsetX, offsetY);
 		favoriteString:SetTextColor(1, 1, 1, 1);
+		favoriteString:SetText(L["Favorites"] .. ":");
+		tinsert(favframepool, favoriteString);
 	end
 
 	local k = itemID;
@@ -329,6 +392,8 @@ function createFavItem(frame, itemFrame, itemID)
 	if true then
 		local itemIcon = GetItemIcon(k);
 		local f = CreateFrame("Frame", "MPLFavItemIcon"..k, frame, BackdropTemplateMixin and "BackdropTemplate");
+		tinsert(favframepool, f);
+		f:SetSize(xSize, ySize);
 
 		local x = xItemStart + xSize/4 + (tmpFavCount - 1)*xSize*1.5;
 		local y = yItemStart - ySize + ySize/4;
@@ -340,11 +405,11 @@ function createFavItem(frame, itemFrame, itemID)
 			f.ico = f:CreateFontString(nil, "OVERLAY", "GameTooltipText")
 			f.ico:SetPoint("BOTTOMLEFT", f, "TOPLEFT", 0, 0)
 			if itemFrame.favorite then
-				f.ico.prefix = icon_unfavorite;
-				itemFrame.ico.prefix = icon_unfavorite;
-			else
 				f.ico.prefix = icon_favorite;
 				itemFrame.ico.prefix = icon_favorite;
+			else
+				f.ico.prefix = icon_unfavorite;
+				itemFrame.ico.prefix = icon_unfavorite;
 			end
 			f.ico.suffix = getRoleIcon(role);
 			f.ico:SetText(f.ico.prefix .. f.ico.suffix);
@@ -369,20 +434,15 @@ function createFavItem(frame, itemFrame, itemID)
 					if shift_key then
 						sendItemLink(item["link"])
 					end
+				elseif button == "RightButton" then
+					toggleFavItem(self, itemFrame, k, itemLevel);
 				end
 			end
 			);
 		end
 	end
 
-	if not itemFrame.favorite then
-		db.profile.favoriteItems[itemID] = role;
-		itemFrame.favorite = true;
-	else
-		db.profile.favoriteItems[itemID] = nil;
-		itemFrame.favorite = false;
-	end
-
+	rotateFavorite(itemFrame.fav, itemFrame, itemID, itemLevel);
 end
 
 function createItems(frame, slotText, mythicLevel, classText, specText)
@@ -512,7 +572,7 @@ function createItems(frame, slotText, mythicLevel, classText, specText)
 		if isInFavorites then
 			f.role = db.profile.favoriteItems[k];
 		else
-			f.role = "ALL";
+			f.role = "";
 		end
 		if not favoriteMode and isInFavorites then
 			f.ico.prefix = icon_favorite;

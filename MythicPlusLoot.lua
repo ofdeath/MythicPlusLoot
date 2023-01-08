@@ -468,14 +468,13 @@ function createItems(frame, slotText, mythicLevel, classText, specText)
 	C_EncounterJournal.ResetSlotFilter()
 	EJ_ResetLootFilter()
 
-	-- item slot filter
-	if slotText ~= L["Favorites"] then
-		local slotIndex = {}
-		for k,v in pairs(gearSlots) do
-			slotIndex[v] = k
-		end
+	local favoriteMode = (slotText == L["Favorites"]) and true or false;
+	local favoriteList = {};
 
-		C_EncounterJournal.SetSlotFilter(slotIndex[slotText] - 1)
+	-- item slot filter
+	if not favoriteMode then
+		local slotIndex = getIndex(gearSlots, slotText)
+		C_EncounterJournal.SetSlotFilter(slotIndex - 1)
 	end
 
 	-- class/spec filter
@@ -491,6 +490,14 @@ function createItems(frame, slotText, mythicLevel, classText, specText)
 	EJ_SetDifficulty(8)
 	C_EncounterJournal.SetPreviewMythicPlusLevel(mythicLevel + 1)
 
+	-- bugfix: it's not working at the first call sometimes
+	EJ_SetDifficulty(8)
+	C_EncounterJournal.SetPreviewMythicPlusLevel(mythicLevel + 1)
+
+	if favoriteMode then
+		EJ_ResetLootFilter()
+	end
+
 	-- get the items
 	for k,v in pairs(dungeonIDs) do
 		EJ_SelectInstance(v)
@@ -505,23 +512,7 @@ function createItems(frame, slotText, mythicLevel, classText, specText)
 	end
 
 	-- favorites
-	local favoriteMode = (slotText == L["Favorites"]) and true or false;
-	local favoriteList = {};
 	if favoriteMode then
-		EJ_ResetLootFilter()
-		-- get the items
-		for k,v in pairs(dungeonIDs) do
-			EJ_SelectInstance(v) -- Ruby Life Pools
-			numItems = EJ_GetNumLoot()
-			for i = 1, numItems do
-				item = C_EncounterJournal.GetLootInfoByIndex(i); 
-				if item["itemQuality"] == "ffa335ee" then -- needed to trim out random green items
-					trimmedItems[item["itemID"]] = item
-					trimmedItems[item["itemID"]]["dungeon"] = k
-				end
-			end
-		end
-
 		for k,v in pairs(db.profile.favoriteItems) do
 			favoriteList[k] = trimmedItems[k];
 		end
@@ -858,6 +849,20 @@ function initFrames()
 		end
 	);
 	UIDropDownMenu_SetSelectedValue(profileDropDown, profileText);
+	function setSelectedValues()
+		if slotText ~= L["Item Slot"] then
+			UIDropDownMenu_SetSelectedValue(slotDropDown, slotText);
+			UIDropDownMenu_SetText(slotDropDown, slotText);
+		end
+		if mythicText ~= L["Mythic Level"] then
+			UIDropDownMenu_SetSelectedValue(mythicDropDown, mythicText);
+			UIDropDownMenu_SetText(mythicDropDown, mythicText);
+		end
+		if classText ~= L["All Classes"] then
+			UIDropDownMenu_SetSelectedValue(classDropDown, classText);
+			UIDropDownMenu_SetText(classDropDown, classText);
+		end
+	end
 	-- Implement the function to change the value
 	function profileDropDown:SetValue(newValue)
 		if not tcontains(db:GetProfiles(), newValue) then
@@ -875,18 +880,7 @@ function initFrames()
 		slotText = (db.profile.slot > 0) and gearSlots[db.profile.slot] or L["Item Slot"];
 		mythicText = (db.profile.mythicLevel > 0) and mythicLabels[db.profile.mythicLevel] or L["Mythic Level"];
 		mythicLevel = db.profile.mythicLevel;
-		if slotText ~= L["Item Slot"] then
-			UIDropDownMenu_SetSelectedValue(slotDropDown, slotText);
-			UIDropDownMenu_SetText(slotDropDown, slotText);
-		end
-		if mythicText ~= L["Mythic Level"] then
-			UIDropDownMenu_SetSelectedValue(mythicDropDown, mythicText);
-			UIDropDownMenu_SetText(mythicDropDown, mythicText);
-		end
-		if classText ~= L["All Classes"] then
-			UIDropDownMenu_SetSelectedValue(classDropDown, classText);
-			UIDropDownMenu_SetText(classDropDown, classText);
-		end
+		setSelectedValues();
 		if slotText ~= L["Item Slot"] and mythicText ~= L["Mythic Level"] then
 			createItems(frame, slotText, mythicLevel, classText, specText);
 		else
@@ -895,7 +889,9 @@ function initFrames()
 
 		CloseDropDownMenus();
 	end
-	
+
+	-- set selected values for dropdown menu
+	setSelectedValues();
 
 	-- dungeon or chest drop down
 	sourceText = L["Source"];

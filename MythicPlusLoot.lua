@@ -858,6 +858,25 @@ function initFrames()
 		end
 	);
 	UIDropDownMenu_SetSelectedValue(profileDropDown, profileText);
+	function setSelectedValues()
+		if slotText ~= L["Item Slot"] then
+			UIDropDownMenu_SetSelectedValue(slotDropDown, slotText);
+			UIDropDownMenu_SetText(slotDropDown, slotText);
+		end
+		if mythicText ~= L["Mythic Level"] then
+			UIDropDownMenu_SetSelectedValue(mythicDropDown, mythicText);
+			UIDropDownMenu_SetText(mythicDropDown, mythicText);
+		end
+		if classText ~= L["All Classes"] then
+			if specText then
+				UIDropDownMenu_SetSelectedValue(classDropDown, specText);
+				UIDropDownMenu_SetText(classDropDown, specText);
+			else
+				UIDropDownMenu_SetSelectedValue(classDropDown, classText);
+				UIDropDownMenu_SetText(classDropDown, classText);
+			end
+		end
+	end
 	-- Implement the function to change the value
 	function profileDropDown:SetValue(newValue)
 		if not tcontains(db:GetProfiles(), newValue) then
@@ -875,18 +894,7 @@ function initFrames()
 		slotText = (db.profile.slot > 0) and gearSlots[db.profile.slot] or L["Item Slot"];
 		mythicText = (db.profile.mythicLevel > 0) and mythicLabels[db.profile.mythicLevel] or L["Mythic Level"];
 		mythicLevel = db.profile.mythicLevel;
-		if slotText ~= L["Item Slot"] then
-			UIDropDownMenu_SetSelectedValue(slotDropDown, slotText);
-			UIDropDownMenu_SetText(slotDropDown, slotText);
-		end
-		if mythicText ~= L["Mythic Level"] then
-			UIDropDownMenu_SetSelectedValue(mythicDropDown, mythicText);
-			UIDropDownMenu_SetText(mythicDropDown, mythicText);
-		end
-		if classText ~= L["All Classes"] then
-			UIDropDownMenu_SetSelectedValue(classDropDown, classText);
-			UIDropDownMenu_SetText(classDropDown, classText);
-		end
+		setSelectedValues();
 		if slotText ~= L["Item Slot"] and mythicText ~= L["Mythic Level"] then
 			createItems(frame, slotText, mythicLevel, classText, specText);
 		else
@@ -895,7 +903,9 @@ function initFrames()
 
 		CloseDropDownMenus();
 	end
-	
+
+	-- set selected values for dropdown menu
+	setSelectedValues();
 
 	-- dungeon or chest drop down
 	sourceText = L["Source"];

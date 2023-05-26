@@ -49,6 +49,15 @@ L["Halls of Valor"] = "용맹의 전당 (Halls of Valor)"
 L["Court of Stars"] = "별의 궁정 (Court of Stars)"
 L["Temple of the Jade Serpent"] = "옥룡사 (Temple of the Jade Serpent)"
 L["Shadowmoon Burial Grounds"] = "어둠달 지하묘지 (Shadowmoon Burial Grounds)"
+-- Season 2
+L["Brackenhide Hollow"] = "담쟁이가죽 골짜기 (Brackenhide Hollow)"
+L["Halls of Infusion"] = "주입의 전당 (Halls of Infusion)"
+L["Neltharus"] = "넬타루스 (Neltharus)"
+L["Uldaman: Legacy of Tyr"] = "울다만: 티르의 유산 (Uldaman: Legacy of Tyr)"
+L["Freehold"] = "자유지대 (Freehold)"
+L["The Underrot"] = "썩은굴 (The Underrot)"
+L["Neltharion’s Lair"] = "넬타리온의 둥지 (Neltharion’s Lair)"
+L["The Vortex Pinnacle"] = "소용돌이 누각 (The Vortex Pinnacle)"
 
 -- General
 L["Item Slot"] = "아이템 슬롯"

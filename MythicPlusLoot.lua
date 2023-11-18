@@ -474,8 +474,10 @@ function createItems(frame, slotText, mythicLevel, classText, specText)
 	C_EncounterJournal.ResetSlotFilter()
 	EJ_ResetLootFilter()
 
+	local favoriteMode = (slotText == L["Favorites"]) and true or false;
+
 	-- item slot filter
-	if slotText ~= L["Favorites"] then
+	if not favoriteMode then
 		local slotIndex = {}
 		for k,v in pairs(gearSlots) do
 			slotIndex[v] = k
@@ -495,7 +497,18 @@ function createItems(frame, slotText, mythicLevel, classText, specText)
 
 	-- set difficulty to mythic keystone and set mythic level
 	EJ_SetDifficulty(8)
-	C_EncounterJournal.SetPreviewMythicPlusLevel(mythicLevel + 1)
+	if mythicLevel + 1 < 9 then
+		C_EncounterJournal.SetPreviewMythicPlusLevel(mythicLevel + 1)
+	else
+		C_EncounterJournal.SetPreviewMythicPlusLevel(mythicLevel + 1)
+	end
+
+	-- reset filter for favorite mode
+	if favoriteMode then
+		EJ_ClearSearch()
+		EJ_ResetLootFilter()
+		C_EncounterJournal.ResetSlotFilter()
+	end
 
 	-- get the items
 	for k,v in pairs(dungeonIDs) do
@@ -511,23 +524,8 @@ function createItems(frame, slotText, mythicLevel, classText, specText)
 	end
 
 	-- favorites
-	local favoriteMode = (slotText == L["Favorites"]) and true or false;
 	local favoriteList = {};
 	if favoriteMode then
-		EJ_ResetLootFilter()
-		-- get the items
-		for k,v in pairs(dungeonIDs) do
-			EJ_SelectInstance(v) -- Ruby Life Pools
-			numItems = EJ_GetNumLoot()
-			for i = 1, numItems do
-				item = C_EncounterJournal.GetLootInfoByIndex(i); 
-				if item["itemQuality"] == "ffa335ee" then -- needed to trim out random green items
-					trimmedItems[item["itemID"]] = item
-					trimmedItems[item["itemID"]]["dungeon"] = k
-				end
-			end
-		end
-
 		for k,v in pairs(db.profile.favoriteItems) do
 			favoriteList[k] = trimmedItems[k];
 		end
@@ -621,8 +619,15 @@ function createItems(frame, slotText, mythicLevel, classText, specText)
 	end
 
 	itemsInitialized = true;
+
+	-- Reset the searches in the adventure guide
+	EJ_SetDifficulty(0)
+	EJ_ClearSearch()
+	EJ_ResetLootFilter()
+	C_EncounterJournal.ResetSlotFilter()
 end
 
+local tryAgain = true;
 local slotText, mythicValue, mythicLevel, mythicText, sourceText;
 MPL.BackdropColor = {0.058823399245739, 0.058823399245739, 0.058823399245739, 0.9}
 
@@ -636,6 +641,14 @@ end
 function MPL:showInterface()
 	if not framesInitialized then initFrames() end
 	if not framesInitialized then return end
+
+	-- try again for fixing a bug of missing items at first time
+	if tryAgain then
+		C_Timer.After(0.1, function()
+			closeMainFrame()
+			initFrames()
+		end)
+	end
 end
 
 function initFrames()
@@ -931,3 +944,5 @@ function initFrames()
 	end
 	framesInitialized = true;
 end
+
+-- vim: set ts=8 sw=8 noexpandtab

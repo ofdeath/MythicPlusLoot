@@ -204,14 +204,20 @@ function createDungeonText(frame)
 		local justifyH;
 		local offsetX;
 		local offsetY;
-		if v<=dungeonTableLength/2 then
+		local dungeonTableLengthHalf;
+		if dungeonTableLength < 8 then
+		    dungeonTableLengthHalf = 4
+		else
+		    dungeonTableLengthHalf = dungeonTableLength
+		end
+		if v<=dungeonTableLengthHalf then
 			justifyH = "RIGHT"
 			offsetX = xStart
 			offsetY = yStart+(v-1)*yOffset
 		else
 			justifyH = "LEFT"
 			offsetX = xStart+xSecondColumn
-			offsetY = yStart+(v-dungeonTableLength/2-1)*yOffset
+			offsetY = yStart+(v-dungeonTableLengthHalf-1)*yOffset
 		end
 
 		local dungeonString = frame.CreateFontString(frame, "overlay");
@@ -530,8 +536,14 @@ function createItems(frame, slotText, mythicLevel, classText, specText)
 	end
 
 	local dungeonTableLength = 0
+	local dungeonTableLengthHalf = 0
 	for _ in pairs(dungeonTable) do
 		dungeonTableLength = dungeonTableLength + 1
+	end
+	if dungeonTableLength < 8 then
+	    dungeonTableLengthHalf = 4
+	else
+	    dungeonTableLengthHalf = dungeonTableLength/2
 	end
 
 	-- display the items
@@ -551,13 +563,13 @@ function createItems(frame, slotText, mythicLevel, classText, specText)
 		end
 
 		-- First column
-		if dungeonNumber<=dungeonTableLength/2 then
+		if dungeonNumber<=dungeonTableLengthHalf then
 			x = xItemStart+xSize/4+(dungeonCount[dungeonNumber][1] - dungeonCount[dungeonNumber][2])*xSize*1.5;
 			y = (yItemStart - dungeonCount[dungeonNumber][3])+(dungeonNumber-1)*yItemOffset/2-ySize+ySize/4;
 		-- Second column
 		else
 			x = xItemStart+xSecondColumn+xSize/4+(dungeonCount[dungeonNumber][1] - dungeonCount[dungeonNumber][2])*xSize*1.5;
-			y = (yItemStart -  dungeonCount[dungeonNumber][3])+(dungeonNumber-dungeonTableLength/2-1)*yItemOffset/2-ySize+ySize/4;
+			y = (yItemStart -  dungeonCount[dungeonNumber][3])+(dungeonNumber-dungeonTableLengthHalf-1)*yItemOffset/2-ySize+ySize/4;
 		end
 
 		f:SetPoint("TOPLEFT", frame, "TOPLEFT", x, y);

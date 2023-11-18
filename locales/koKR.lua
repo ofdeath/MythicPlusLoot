@@ -58,6 +58,16 @@ L["Freehold"] = "자유지대 (Freehold)"
 L["The Underrot"] = "썩은굴 (The Underrot)"
 L["Neltharion’s Lair"] = "넬타리온의 둥지 (Neltharion’s Lair)"
 L["The Vortex Pinnacle"] = "소용돌이 누각 (The Vortex Pinnacle)"
+-- Season 3
+L["Dawn of the Infinite"] = "무한의 여명 (Dawn of the Infinite)"
+L["Dawn of the Infinite: Galakrond's Fall"] = "갈라크론드의 몰락 (Galakrond's Fall)"
+L["Dawn of the Infinite: Murozond's Rise"] = "무르도즈노의 현신 (Murozond's Rise)"
+L["Atal'Dazar"] = "아탈다자르 (Atal'Dazar)"
+L["Waycrest Manor"] = "웨이크레스트 저택 (Waycrest Manor)"
+L["Black Rook Hold"] = "검은 떼까마귀 요새 (Black Rook Hold)"
+L["Darkheart Thicket"] = "어둠심장 숲 (Darkheart Thicket)"
+L["The Everbloom"] = "상록숲 (The Everbloom)"
+L["Throne of the Tides"] = "파도의 왕좌 (Throne of the Tides)"
 
 -- General
 L["Item Slot"] = "아이템 슬롯"

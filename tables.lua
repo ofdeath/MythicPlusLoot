@@ -55,14 +55,13 @@ MPL_tables.get_mythic_labels = get_mythic_labels
 
 local function get_dungeons()
     local dungeonTable = {
-        [L["Brackenhide Hollow"]] = 1,
-        [L["Halls of Infusion"]] = 2,
-        [L["Neltharus"]] = 3,
-        [L["Uldaman: Legacy of Tyr"]] = 4,
-        [L["Freehold"]] = 5,
-        [L["The Underrot"]] = 6,
-        [L["Neltharion’s Lair"]] = 7,
-        [L["The Vortex Pinnacle"]] = 8,
+        [L["Dawn of the Infinite"]] = 1,
+        [L["Atal'Dazar"]] = 2,
+        [L["Waycrest Manor"]] = 3,
+        [L["Black Rook Hold"]] = 4,
+        [L["Darkheart Thicket"]] = 5,
+        [L["The Everbloom"]] = 6,
+        [L["Throne of the Tides"]] = 7,
     }
 
     return dungeonTable
@@ -70,15 +69,18 @@ end
 MPL_tables.get_dungeons = get_dungeons
 
 local function dungeon_ids()
+    -- https://wago.tools/db2/JournalInstance
+    -- <old> https://wow.tools/dbc/?dbc=journalinstance&build=10.0.5.47660#page=1
     local dungeonIDs = {
-        [L["Brackenhide Hollow"]] = 1196,
-        [L["Halls of Infusion"]] = 1204,
-        [L["Neltharus"]] = 1199,
-        [L["Uldaman: Legacy of Tyr"]] = 1197,
-        [L["Freehold"]] = 1001,
-        [L["The Underrot"]] = 1022,
-        [L["Neltharion’s Lair"]] = 767,
-        [L["The Vortex Pinnacle"]] = 68,
+        [L["Dawn of the Infinite"]] = 1209,
+        --[L["Dawn of the Infinite: Galakrond's Fall"]] = 1209,
+        --[L["Dawn of the Infinite: Murozond's Rise"]] = 1209,
+        [L["Atal'Dazar"]] = 968,
+        [L["Waycrest Manor"]] = 1021,
+        [L["Black Rook Hold"]] = 740,
+        [L["Darkheart Thicket"]] = 762,
+        [L["The Everbloom"]] = 556,
+        [L["Throne of the Tides"]] = 65,
     }
 
     return dungeonIDs

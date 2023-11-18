@@ -57,6 +57,16 @@ L["Freehold"] = "Freehold"
 L["The Underrot"] = "The Underrot"
 L["Neltharion’s Lair"] = "Neltharion’s Lair"
 L["The Vortex Pinnacle"] = "The Vortex Pinnacle"
+-- Season 3
+L["Dawn of the Infinite"] = "Dawn of the Infinite"
+L["Dawn of the Infinite: Galakrond's Fall"] = "Dawn of the Infinite: Galakrond's Fall"
+L["Dawn of the Infinite: Murozond's Rise"] = "Dawn of the Infinite: Murozond's Rise"
+L["Atal'Dazar"] = "Atal'Dazar"
+L["Waycrest Manor"] = "Waycrest Manor"
+L["Black Rook Hold"] = "Black Rook Hold"
+L["Darkheart Thicket"] = "Darkheart Thicket"
+L["The Everbloom"] = "The Everbloom"
+L["Throne of the Tides"] = "Throne of the Tides"
 
 -- General
 L["Item Slot"] = "Item Slot"

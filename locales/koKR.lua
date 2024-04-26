@@ -68,6 +68,15 @@ L["Black Rook Hold"] = "검은 떼까마귀 요새 (Black Rook Hold)"
 L["Darkheart Thicket"] = "어둠심장 숲 (Darkheart Thicket)"
 L["The Everbloom"] = "상록숲 (The Everbloom)"
 L["Throne of the Tides"] = "파도의 왕좌 (Throne of the Tides)"
+-- Season 4
+L["Brackenhide Hollow"] = "담쟁이가죽 골짜기 (Brackenhide Hollow)"
+L["Algeth'ar Academy"] = "알게타르 대학 (Algeth'ar Academy)"
+L["Neltharus"] = "넬타루스 (Neltharus)"
+L["Halls of Infusion"] = "주입의 전당 (Halls of Infusion)"
+L["Ruby Life Pools"] = "루비 생명의 웅덩이 (Ruby Life Pools)"
+L["The Azure Vault"] = "하늘빛 보관소 (The Azure Vault)"
+L["The Nokhud Offensive"] = "노쿠드 공격대 (The Nokhud Offensive)"
+L["Uldaman: Legacy of Tyr"] = "울다만: 티르의 유산 (Uldaman: Legacy of Tyr)"
 
 -- General
 L["Item Slot"] = "아이템 슬롯"

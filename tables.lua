@@ -55,13 +55,14 @@ MPL_tables.get_mythic_labels = get_mythic_labels
 
 local function get_dungeons()
     local dungeonTable = {
-        [L["Dawn of the Infinite"]] = 1,
-        [L["Atal'Dazar"]] = 2,
-        [L["Waycrest Manor"]] = 3,
-        [L["Black Rook Hold"]] = 4,
-        [L["Darkheart Thicket"]] = 5,
-        [L["The Everbloom"]] = 6,
-        [L["Throne of the Tides"]] = 7,
+        [L["Brackenhide Hollow"]] = 1,
+        [L["Algeth'ar Academy"]] = 2,
+        [L["Neltharus"]] = 3,
+        [L["Halls of Infusion"]] = 4,
+        [L["Ruby Life Pools"]] = 5,
+        [L["The Azure Vault"]] = 6,
+        [L["The Nokhud Offensive"]] = 7,
+        [L["Uldaman: Legacy of Tyr"]] = 8,
     }
 
     return dungeonTable
@@ -71,16 +72,16 @@ MPL_tables.get_dungeons = get_dungeons
 local function dungeon_ids()
     -- https://wago.tools/db2/JournalInstance
     -- <old> https://wow.tools/dbc/?dbc=journalinstance&build=10.0.5.47660#page=1
+    --    OR https://old.wow.tools/dbc/?dbc=journalinstance&build=10.0.5.47660#page=1&search=nokhud
     local dungeonIDs = {
-        [L["Dawn of the Infinite"]] = 1209,
-        --[L["Dawn of the Infinite: Galakrond's Fall"]] = 1209,
-        --[L["Dawn of the Infinite: Murozond's Rise"]] = 1209,
-        [L["Atal'Dazar"]] = 968,
-        [L["Waycrest Manor"]] = 1021,
-        [L["Black Rook Hold"]] = 740,
-        [L["Darkheart Thicket"]] = 762,
-        [L["The Everbloom"]] = 556,
-        [L["Throne of the Tides"]] = 65,
+        [L["Brackenhide Hollow"]] = 1196,
+        [L["Algeth'ar Academy"]] = 1201,
+        [L["Neltharus"]] = 1199,
+        [L["Halls of Infusion"]] = 1204,
+        [L["Ruby Life Pools"]] = 1202,
+        [L["The Azure Vault"]] = 1203,
+        [L["The Nokhud Offensive"]] = 1198,
+        [L["Uldaman: Legacy of Tyr"]] = 1197,
     }
 
     return dungeonIDs

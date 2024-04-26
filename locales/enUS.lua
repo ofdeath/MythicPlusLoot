@@ -67,6 +67,15 @@ L["Black Rook Hold"] = "Black Rook Hold"
 L["Darkheart Thicket"] = "Darkheart Thicket"
 L["The Everbloom"] = "The Everbloom"
 L["Throne of the Tides"] = "Throne of the Tides"
+-- Season 4
+L["Brackenhide Hollow"] = "Brackenhide Hollow"
+L["Algeth'ar Academy"] = "Algeth'ar Academy"
+L["Neltharus"] = "Neltharus"
+L["Halls of Infusion"] = "Halls of Infusion"
+L["Ruby Life Pools"] = "Ruby Life Pools"
+L["The Azure Vault"] = "The Azure Vault"
+L["The Nokhud Offensive"] = "The Nokhud Offensive"
+L["Uldaman: Legacy of Tyr"] = "Uldaman: Legacy of Tyr"
 
 -- General
 L["Item Slot"] = "Item Slot"

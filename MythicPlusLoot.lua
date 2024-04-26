@@ -208,7 +208,7 @@ function createDungeonText(frame)
 		if dungeonTableLength < 8 then
 		    dungeonTableLengthHalf = 4
 		else
-		    dungeonTableLengthHalf = dungeonTableLength
+		    dungeonTableLengthHalf = dungeonTableLength/2
 		end
 		if v<=dungeonTableLengthHalf then
 			justifyH = "RIGHT"

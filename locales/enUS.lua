@@ -76,6 +76,7 @@ L["Ruby Life Pools"] = "Ruby Life Pools"
 L["The Azure Vault"] = "The Azure Vault"
 L["The Nokhud Offensive"] = "The Nokhud Offensive"
 L["Uldaman: Legacy of Tyr"] = "Uldaman: Legacy of Tyr"
+L["Dragon Isles"] = "Dragon Isles"
 
 -- General
 L["Item Slot"] = "Item Slot"

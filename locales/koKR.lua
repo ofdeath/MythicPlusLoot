@@ -77,6 +77,7 @@ L["Ruby Life Pools"] = "루비 생명의 웅덩이 (Ruby Life Pools)"
 L["The Azure Vault"] = "하늘빛 보관소 (The Azure Vault)"
 L["The Nokhud Offensive"] = "노쿠드 공격대 (The Nokhud Offensive)"
 L["Uldaman: Legacy of Tyr"] = "울다만: 티르의 유산 (Uldaman: Legacy of Tyr)"
+L["Dragon Isles"] = "용의 섬 (Dragon Isles)"
 
 -- General
 L["Item Slot"] = "아이템 슬롯"

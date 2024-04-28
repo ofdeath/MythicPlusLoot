@@ -208,7 +208,7 @@ function createDungeonText(frame)
 		if dungeonTableLength < 8 then
 		    dungeonTableLengthHalf = 4
 		else
-		    dungeonTableLengthHalf = dungeonTableLength/2
+		    dungeonTableLengthHalf = math.floor(dungeonTableLength/2)
 		end
 		if v<=dungeonTableLengthHalf then
 			justifyH = "RIGHT"
@@ -541,7 +541,7 @@ function createItems(frame, slotText, mythicLevel, classText, specText)
 	if dungeonTableLength < 8 then
 	    dungeonTableLengthHalf = 4
 	else
-	    dungeonTableLengthHalf = dungeonTableLength/2
+	    dungeonTableLengthHalf = math.floor(dungeonTableLength/2)
 	end
 
 	-- display the items

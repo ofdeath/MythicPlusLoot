@@ -63,6 +63,7 @@ local function get_dungeons()
         [L["The Azure Vault"]] = 6,
         [L["The Nokhud Offensive"]] = 7,
         [L["Uldaman: Legacy of Tyr"]] = 8,
+        [L["Dragon Isles"]] = 9,
     }
 
     return dungeonTable
@@ -82,6 +83,7 @@ local function dungeon_ids()
         [L["The Azure Vault"]] = 1203,
         [L["The Nokhud Offensive"]] = 1198,
         [L["Uldaman: Legacy of Tyr"]] = 1197,
+        [L["Dragon Isles"]] = 1205,
     }
 
     return dungeonIDs

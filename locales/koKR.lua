@@ -78,6 +78,16 @@ L["The Azure Vault"] = "하늘빛 보관소 (The Azure Vault)"
 L["The Nokhud Offensive"] = "노쿠드 공격대 (The Nokhud Offensive)"
 L["Uldaman: Legacy of Tyr"] = "울다만: 티르의 유산 (Uldaman: Legacy of Tyr)"
 L["Dragon Isles"] = "용의 섬 (Dragon Isles)"
+-- The War Within
+-- Season 1
+L["Ara-Kara, City of Echoes"] = "메아리의 도시 아라카라 (Ara-Kara, City of Echoes)"
+L["Grim Batol"] = "그림바툴 (Grim Batol)"
+L["City of Threads"] = "실타래의 도시 (City of Threads)"
+L["The Necrotic Wake"] = "죽음의 상흔 (The Necrotic Wake)"
+L["The Stonevault"] = "바위금고 (The Stonevault)"
+L["Mists of Tirna Scithe"] = "티르너 사이드의 안개 (Mists of Tirna Scithe)"
+L["The Dawnbreaker"] = "새벽인도자호 (The Dawnbreaker)"
+L["Siege of Boralus"] = "보랄러스 공성전 (Siege of Boralus)"
 
 -- General
 L["Item Slot"] = "아이템 슬롯"

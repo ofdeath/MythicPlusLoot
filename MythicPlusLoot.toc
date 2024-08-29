@@ -1,7 +1,7 @@
-## Interface: 100100
+## Interface: 110002
 ## Title: MythicPlusLoot
 ## Author: Scott Davis
-## Version: 10.1.0
+## Version: 11.0.2
 ## Notes: Gear scaling for mythic+ dungeons.
 ## Notes-ruRU: Скалирование снаряжения для М+ подземелий.
 ## SavedVariables: MythicPlusLootDB

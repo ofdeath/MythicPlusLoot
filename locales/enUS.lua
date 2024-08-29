@@ -77,6 +77,16 @@ L["The Azure Vault"] = "The Azure Vault"
 L["The Nokhud Offensive"] = "The Nokhud Offensive"
 L["Uldaman: Legacy of Tyr"] = "Uldaman: Legacy of Tyr"
 L["Dragon Isles"] = "Dragon Isles"
+-- The War Within
+-- Season 1
+L["Ara-Kara, City of Echoes"] = "Ara-Kara, City of Echoes"
+L["Grim Batol"] = "Grim Batol"
+L["City of Threads"] = "City of Threads"
+L["The Necrotic Wake"] = "The Necrotic Wake"
+L["The Stonevault"] = "The Stonevault"
+L["Mists of Tirna Scithe"] = "Mists of Tirna Scithe"
+L["The Dawnbreaker"] = "The Dawnbreaker"
+L["Siege of Boralus"] = "Siege of Boralus"
 
 -- General
 L["Item Slot"] = "Item Slot"

@@ -55,15 +55,14 @@ MPL_tables.get_mythic_labels = get_mythic_labels
 
 local function get_dungeons()
     local dungeonTable = {
-        [L["Brackenhide Hollow"]] = 1,
-        [L["Algeth'ar Academy"]] = 2,
-        [L["Neltharus"]] = 3,
-        [L["Halls of Infusion"]] = 4,
-        [L["Ruby Life Pools"]] = 5,
-        [L["The Azure Vault"]] = 6,
-        [L["The Nokhud Offensive"]] = 7,
-        [L["Uldaman: Legacy of Tyr"]] = 8,
-        [L["Dragon Isles"]] = 9,
+        [L["Ara-Kara, City of Echoes"]] = 1,
+        [L["Grim Batol"]] = 2,
+        [L["City of Threads"]] = 3,
+        [L["The Necrotic Wake"]] = 4,
+        [L["The Stonevault"]] = 5,
+        [L["Mists of Tirna Scithe"]] = 6,
+        [L["The Dawnbreaker"]] = 7,
+        [L["Siege of Boralus"]] = 8,
     }
 
     return dungeonTable
@@ -75,15 +74,14 @@ local function dungeon_ids()
     -- <old> https://wow.tools/dbc/?dbc=journalinstance&build=10.0.5.47660#page=1
     --    OR https://old.wow.tools/dbc/?dbc=journalinstance&build=10.0.5.47660#page=1&search=nokhud
     local dungeonIDs = {
-        [L["Brackenhide Hollow"]] = 1196,
-        [L["Algeth'ar Academy"]] = 1201,
-        [L["Neltharus"]] = 1199,
-        [L["Halls of Infusion"]] = 1204,
-        [L["Ruby Life Pools"]] = 1202,
-        [L["The Azure Vault"]] = 1203,
-        [L["The Nokhud Offensive"]] = 1198,
-        [L["Uldaman: Legacy of Tyr"]] = 1197,
-        [L["Dragon Isles"]] = 1205,
+        [L["Ara-Kara, City of Echoes"]] = 1271,
+        [L["Grim Batol"]] = 71,
+        [L["City of Threads"]] = 1274,
+        [L["The Necrotic Wake"]] = 1182,
+        [L["The Stonevault"]] = 1269,
+        [L["Mists of Tirna Scithe"]] = 1184,
+        [L["The Dawnbreaker"]] = 1270,
+        [L["Siege of Boralus"]] = 1023,
     }
 
     return dungeonIDs

@@ -497,11 +497,13 @@ function createItems(frame, slotText, mythicLevel, classText, specText)
 
 	-- set difficulty to mythic keystone and set mythic level
 	EJ_SetDifficulty(8)
-	if mythicLevel + 1 < 9 then
-		C_EncounterJournal.SetPreviewMythicPlusLevel(mythicLevel + 1)
+	local level;
+	if mythicLevel + 1 <= 10 then
+		level = mythicLevel + 1;
 	else
-		C_EncounterJournal.SetPreviewMythicPlusLevel(mythicLevel + 1)
+		level = mythicLevel + 1 - 6;
 	end
+	C_EncounterJournal.SetPreviewMythicPlusLevel(level)
 
 	-- reset filter for favorite mode
 	if favoriteMode then

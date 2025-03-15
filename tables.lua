@@ -28,25 +28,25 @@ MPL_tables.get_slots = get_slots
 
 local function get_mythic_labels()
     local mythicLabels = {
-        [1] = L["M+2/Valor 1"],
-        [2] = L["M+3/Valor 1"],
-        [3] = L["M+4/Valor 2"],
-        [4] = L["M+5/Valor 2"],
-        [5] = L["M+6/Valor 3"],
-        [6] = L["M+7/Valor 4"],
-        [7] = L["M+8/Valor 4"],
-        [8] = L["M+9/Valor 5"],
-        [9] = L["M+10/Valor 6"],
-        [10] = L["M+11/Valor 6"],
-        [11] = L["M+12/Valor 6"],
-        [12] = L["M+13/Valor 6"],
-        [13] = L["M+14/Valor 7"],
-        [14] = L["M+15/Valor 8"],
-        [15] = L["M+16/Valor 8"],
-        [16] = L["M+17/Valor 9"],
-        [17] = L["M+18/Valor 9"],
-        [18] = L["M+19/Valor 10"],
-        [19] = L["M+20/Valor 10"],
+        [1] = L["M+2"],
+        [2] = L["M+3"],
+        [3] = L["M+4"],
+        [4] = L["M+5"],
+        [5] = L["M+6"],
+        [6] = L["M+7"],
+        [7] = L["M+8"],
+        [8] = L["M+9"],
+        [9] = L["M+10"],
+        [10] = L["Great Vault +0"],
+        [11] = L["Great Vault +2"],
+        [12] = L["Great Vault +3"],
+        [13] = L["Great Vault +4"],
+        [14] = L["Great Vault +5"],
+        [15] = L["Great Vault +6"],
+        [16] = L["Great Vault +7"],
+        [17] = L["Great Vault +8"],
+        [18] = L["Great Vault +9"],
+        [19] = L["Great Vault +10"],
     }
 
     return mythicLabels
@@ -56,13 +56,13 @@ MPL_tables.get_mythic_labels = get_mythic_labels
 local function get_dungeons()
     local dungeonTable = {
         [L["Ara-Kara, City of Echoes"]] = 1,
-        [L["Grim Batol"]] = 2,
-        [L["City of Threads"]] = 3,
-        [L["The Necrotic Wake"]] = 4,
-        [L["The Stonevault"]] = 5,
+        [L["Grim Batol"]] = 8,
+        [L["City of Threads"]] = 4,
+        [L["The Necrotic Wake"]] = 5,
+        [L["The Stonevault"]] = 2,
         [L["Mists of Tirna Scithe"]] = 6,
-        [L["The Dawnbreaker"]] = 7,
-        [L["Siege of Boralus"]] = 8,
+        [L["The Dawnbreaker"]] = 3,
+        [L["Siege of Boralus"]] = 7,
     }
 
     return dungeonTable

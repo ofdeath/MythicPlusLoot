@@ -55,14 +55,14 @@ MPL_tables.get_mythic_labels = get_mythic_labels
 
 local function get_dungeons()
     local dungeonTable = {
-        [L["Ara-Kara, City of Echoes"]] = 1,
-        [L["Grim Batol"]] = 8,
-        [L["City of Threads"]] = 4,
-        [L["The Necrotic Wake"]] = 5,
-        [L["The Stonevault"]] = 2,
-        [L["Mists of Tirna Scithe"]] = 6,
-        [L["The Dawnbreaker"]] = 3,
-        [L["Siege of Boralus"]] = 7,
+        [L["Cinderbrew Meadery"]] = 1,
+        [L["Darkflame Cleft"]] = 2,
+        [L["The Rookery"]] = 3,
+        [L["Priory of Sacred Flame"]] = 4,
+        [L["The MOTHERLODE!!"]] = 5,
+        [L["Operation: Floodgate"]] = 6,
+        [L["Theater of Pain"]] = 7,
+        [L["Operation Mechagon: Workshop"]] = 8,
     }
 
     return dungeonTable
@@ -74,14 +74,14 @@ local function dungeon_ids()
     -- <old> https://wow.tools/dbc/?dbc=journalinstance&build=10.0.5.47660#page=1
     --    OR https://old.wow.tools/dbc/?dbc=journalinstance&build=10.0.5.47660#page=1&search=nokhud
     local dungeonIDs = {
-        [L["Ara-Kara, City of Echoes"]] = 1271,
-        [L["Grim Batol"]] = 71,
-        [L["City of Threads"]] = 1274,
-        [L["The Necrotic Wake"]] = 1182,
-        [L["The Stonevault"]] = 1269,
-        [L["Mists of Tirna Scithe"]] = 1184,
-        [L["The Dawnbreaker"]] = 1270,
-        [L["Siege of Boralus"]] = 1023,
+        [L["Cinderbrew Meadery"]] = 1272,
+        [L["Darkflame Cleft"]] = 1210,
+        [L["The Rookery"]] = 1268,
+        [L["Priory of Sacred Flame"]] = 1267,
+        [L["The MOTHERLODE!!"]] = 1012,
+        [L["Operation: Floodgate"]] = 1298,
+        [L["Theater of Pain"]] = 1187,
+        [L["Operation Mechagon: Workshop"]] = 1178,
     }
 
     return dungeonIDs

@@ -88,6 +88,15 @@ L["The Stonevault"] = "바위금고 (The Stonevault)"
 L["Mists of Tirna Scithe"] = "티르너 사이드의 안개 (Mists of Tirna Scithe)"
 L["The Dawnbreaker"] = "새벽인도자호 (The Dawnbreaker)"
 L["Siege of Boralus"] = "보랄러스 공성전 (Siege of Boralus)"
+-- Season 2
+L["Cinderbrew Meadery"] = "잿불맥주 양조장 (Cinderbrew Meadery)"
+L["Darkflame Cleft"] = "어둠불꽃 동굴 (Darkflame Cleft)"
+L["The Rookery"] = "부화장 (The Rookery)"
+L["Priory of Sacred Flame"] = "신성한 불꽃의 수도원 (Priory of Sacred Flame)"
+L["The MOTHERLODE!!"] = "왕노다지 광산 (The MOTHERLODE!!)"
+L["Operation: Floodgate"] = "작전명: 수문 (Operation: Floodgate)"
+L["Theater of Pain"] = "고통의 투기장 (Theater of Pain)"
+L["Operation Mechagon: Workshop"] = "작전명: 메카곤 - 작업장 (Operation Mechagon: Workshop)"
 
 -- General
 L["Item Slot"] = "아이템 슬롯"

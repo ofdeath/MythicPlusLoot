@@ -87,6 +87,15 @@ L["The Stonevault"] = "The Stonevault"
 L["Mists of Tirna Scithe"] = "Mists of Tirna Scithe"
 L["The Dawnbreaker"] = "The Dawnbreaker"
 L["Siege of Boralus"] = "Siege of Boralus"
+-- Season 2
+L["Cinderbrew Meadery"] = "Cinderbrew Meadery"
+L["Darkflame Cleft"] = "Darkflame Cleft"
+L["The Rookery"] = "The Rookery"
+L["Priory of Sacred Flame"] = "Priory of Sacred Flame"
+L["The MOTHERLODE!!"] = "The MOTHERLODE!!"
+L["Operation: Floodgate"] = "Operation: Floodgate"
+L["Theater of Pain"] = "Theater of Pain"
+L["Operation Mechagon: Workshop"] = "Operation Mechagon: Workshop"
 
 -- General
 L["Item Slot"] = "Item Slot"

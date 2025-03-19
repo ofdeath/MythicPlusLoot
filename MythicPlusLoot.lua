@@ -5,8 +5,11 @@ local sizey = 600;
 
 local frame;
 local framesInitialized;
+local framesInitializedInternal;
 local itemsInitialized;
 local db;
+local corruptData;
+local currentlyFetching;
 local currentProfileKey;
 
 local LDB;
@@ -37,7 +40,7 @@ local icon_unfavorite = icons.bnetfriend;
 SLASH_MYTHICPLUSLOOT1 = "/mpl";
 
 function SlashCmdList.MYTHICPLUSLOOT(cmd, editbox)
-	if not framesInitialized then 
+	if not framesInitialized then
 		MPL:showInterface();
 	end
 end
@@ -139,7 +142,7 @@ function MythicPlusLoot:OnProfileChanged(event, database, newProfileKey)
 
 	self:VersionCompatibility(true)
 	if newProfileKey ~= nil and newProfileKey ~= currentProfileKey then
-		closeMainFrame();
+		closeMainFrame(true);
 	end
 end
 
@@ -147,7 +150,7 @@ function MythicPlusLoot:OnProfileAddRemoved(event, database, profileKey)
 	self.db = database
 	db = self.db
 
-	closeMainFrame();
+	closeMainFrame(true);
 end
 
 function MythicPlusLoot:VersionCompatibility(onChanged)
@@ -452,6 +455,46 @@ function createFavItem(frame, itemFrame, itemID)
 end
 
 function createItems(frame, slotText, mythicLevel, classText, specText)
+	C_MythicPlus.RequestMapInfo()
+
+	local seasonId = C_MythicPlus.GetCurrentSeason()
+	local mplusActive = C_MythicPlus.IsMythicPlusActive()
+
+	if corruptData == nil then
+		corruptData = true;
+	end
+
+	local info = {
+		frame = frame,
+		slotText = slotText,
+		mythicLevel = mythicLevel,
+		classText = classText,
+		specText = specText
+	}
+
+	TryCreateItemsNTimes(info, 1, 3, 1)
+end
+
+function TryCreateItemsNTimes(info, delay, maxTries, currentTry)
+	currentlyFetching = true;
+	createItemsInternal(info.frame, info.slotText, info.mythicLevel, info.classText, info.specText)
+
+	if not corruptData then
+		currentlyFetching = false;
+		return
+	end
+
+	if currentTry <= maxTries then
+		local nextTry = currentTry + 1;
+		C_Timer.After(delay, function()
+			TryCreateItemsNTimes(info, delay, maxTries, nextTry)
+		end)
+	else
+		currentlyFetching = false;
+	end
+end
+
+function createItemsInternal(frame, slotText, mythicLevel, classText, specText)
 	clearFrames();
 	local xItemStart, yItemStart, yItemOffset, xItemSecondColumn = 75, -110, -220, 325;
 	local trimmedItems = {};
@@ -468,16 +511,23 @@ function createItems(frame, slotText, mythicLevel, classText, specText)
 		[9] = {0, 0, 0},
 		[10] = {0, 0, 0},
 	}
-	
+
 	-- Reset the searches in the adventure guide
 	EJ_ClearSearch()
 	C_EncounterJournal.ResetSlotFilter()
 	EJ_ResetLootFilter()
 
+	local corruptItem = false;
 	local favoriteMode = (slotText == L["Favorites"]) and true or false;
 
+	-- reset filter for favorite mode
+	if favoriteMode then
+		EJ_ClearSearch()
+		C_EncounterJournal.ResetSlotFilter()
+		EJ_ResetLootFilter()
+
 	-- item slot filter
-	if not favoriteMode then
+	else
 		local slotIndex = {}
 		for k,v in pairs(gearSlots) do
 			slotIndex[v] = k
@@ -486,15 +536,20 @@ function createItems(frame, slotText, mythicLevel, classText, specText)
 		C_EncounterJournal.SetSlotFilter(slotIndex[slotText] - 1)
 	end
 
+	local classId = nil;
+	local specId = nil;
 	-- class/spec filter
 	if classText ~= L["All Classes"] then
+		classId = classIDs[classText];
 		if specText then
+			specId = specIDs[classText][specText];
 			EJ_SetLootFilter(classIDs[classText], specIDs[classText][specText])
 		else
 			EJ_SetLootFilter(classIDs[classText])
 		end
 	end
 
+	local mythicDifficulty = 8;
 	-- set difficulty to mythic keystone and set mythic level
 	EJ_SetDifficulty(8)
 	local level;
@@ -505,22 +560,41 @@ function createItems(frame, slotText, mythicLevel, classText, specText)
 	end
 	C_EncounterJournal.SetPreviewMythicPlusLevel(level)
 
-	-- reset filter for favorite mode
-	if favoriteMode then
-		EJ_ClearSearch()
-		EJ_ResetLootFilter()
-		C_EncounterJournal.ResetSlotFilter()
-	end
-
 	-- get the items
 	for k,v in pairs(dungeonIDs) do
 		EJ_SelectInstance(v)
+
+		if EJ_GetInstanceInfo(v) == EJ_GetInstanceInfo() then
+			corruptItem = true;
+		end
+
+		local testDifficultyID = EJ_GetDifficulty()
+		if testDifficultyID ~= mythicDifficulty then
+			if specId then
+				EJ_SetLootFilter(classId, specId)
+			else
+				EJ_SetLootFilter(classId)
+			end
+			EJ_SetDifficulty(mythicDifficulty)
+			C_EncounterJournal.SetPreviewMythicPlusLevel(level)
+		end
+
 		numItems = EJ_GetNumLoot()
 		for i = 1, numItems do
-			item = C_EncounterJournal.GetLootInfoByIndex(i); 
+			item = C_EncounterJournal.GetLootInfoByIndex(i);
 			if item["itemQuality"] == "ffa335ee" then -- needed to trim out random green items
 				trimmedItems[item["itemID"]] = item
 				trimmedItems[item["itemID"]]["dungeon"] = k
+			end
+			if item.name == nil then
+				corruptItem = true;
+			end
+			if select(6, EJ_GetEncounterInfo(item["encounterID"])) ~= v then
+				corruptItem = true;
+			end
+			-- try to select encounter
+			if corruptItem and i == numItems then
+				EJ_SelectEncounter(item["encounterID"])
 			end
 		end
 	end
@@ -620,37 +694,57 @@ function createItems(frame, slotText, mythicLevel, classText, specText)
 		dungeonCount[dungeonNumber][1] = dungeonCount[dungeonNumber][1]+1
 	end
 
+	corruptData = corruptItem;
 	itemsInitialized = true;
 
 	-- Reset the searches in the adventure guide
-	EJ_SetDifficulty(0)
 	EJ_ClearSearch()
-	EJ_ResetLootFilter()
 	C_EncounterJournal.ResetSlotFilter()
+	EJ_ResetLootFilter()
 end
 
-local tryAgain = true;
 local slotText, mythicValue, mythicLevel, mythicText, sourceText;
 MPL.BackdropColor = {0.058823399245739, 0.058823399245739, 0.058823399245739, 0.9}
 
-function closeMainFrame()
+function closeMainFrame(destroy)
 	if frame and framesInitialized then
 		frame:Hide();
 		framesInitialized = false;
+		if destroy then
+			framesInitializedInternal = false;
+		end
 	end
 end
 
-function MPL:showInterface()
-	if not framesInitialized then initFrames() end
-	if not framesInitialized then return end
+function MPL:showInterface(delay, maxTries, currentTry)
+	delay = delay or 0.3
+	maxTries = maxTries or 3
+	currentTry = currentTry or 1
 
-	-- try again for fixing a bug of missing items at first time
-	if tryAgain then
-		C_Timer.After(0.1, function()
-			closeMainFrame()
-			initFrames()
+	local mplusActive = C_MythicPlus.IsMythicPlusActive()
+
+	if currentTry <= maxTries and not mplusActive then
+		local nextTry = currentTry + 1
+		C_Timer.After(delay, function()
+			MPL:showInterface(delay, maxTries, nextTry)
 		end)
+		return
 	end
+
+	if mplusActive or currentTry > maxTries then
+		MPL:showInterfaceInternal()
+	end
+end
+
+function MPL:showInterfaceInternal()
+	if frame and framesInitializedInternal then
+		frame:Show();
+		framesInitialized = true;
+		return
+	end
+
+	closeMainFrame()
+	initFrames()
 end
 
 function initFrames()
@@ -945,6 +1039,7 @@ function initFrames()
 		createItems(frame, slotText, mythicLevel, classText, specText);
 	end
 	framesInitialized = true;
+	framesInitializedInternal = true;
 end
 
 -- vim: set ts=8 sw=8 noexpandtab
